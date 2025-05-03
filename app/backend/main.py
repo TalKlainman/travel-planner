@@ -29,10 +29,10 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth.router)
-app.include_router(trips.router)
-app.include_router(preferences.router)
-app.include_router(locations.router)
+app.include_router(auth.router, prefix="/api")
+app.include_router(trips.router, prefix="/api")
+app.include_router(preferences.router, prefix="/api")
+app.include_router(locations.router, prefix="/api")
 
 @app.get("/")
 def read_root():

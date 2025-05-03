@@ -1,0 +1,499 @@
+// import React, { useState } from 'react';
+
+// const TripForm = ({ onSubmit, initialData = {} }) => {
+//   // Hardcoded locations instead of API fetch
+//   const locations = [
+//     { id: 1, name: 'Rome', country: 'Italy' },
+//     { id: 2, name: 'Paris', country: 'France' },
+//     { id: 3, name: 'Barcelona', country: 'Spain' },
+//     { id: 4, name: 'London', country: 'United Kingdom' },
+//     { id: 5, name: 'Berlin', country: 'Germany' },
+//     { id: 6, name: 'Tokyo', country: 'Japan' },
+//     { id: 7, name: 'New York', country: 'USA' },
+//     { id: 8, name: 'Sydney', country: 'Australia' },
+//     { id: 9, name: 'Cairo', country: 'Egypt' },
+//     { id: 10, name: 'Rio de Janeiro', country: 'Brazil' }
+//   ];
+
+//   const [formData, setFormData] = useState({
+//     title: initialData.title || '',
+//     destination: initialData.destination || '',
+//     start_date: initialData.start_date || '',
+//     end_date: initialData.end_date || '',
+//     budget: initialData.budget || '',
+//     description: initialData.description || ''
+//   });
+//   const [errors, setErrors] = useState({});
+
+//   const handleChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData({
+//       ...formData,
+//       [name]: value
+//     });
+//   };
+
+//   const validate = () => {
+//     const newErrors = {};
+//     if (!formData.title) newErrors.title = 'Title is required';
+//     if (!formData.destination) newErrors.destination = 'Destination is required';
+//     if (!formData.start_date) newErrors.start_date = 'Start date is required';
+//     if (!formData.end_date) newErrors.end_date = 'End date is required';
+
+//     // Check if end date is after start date
+//     if (formData.start_date && formData.end_date) {
+//       const start = new Date(formData.start_date);
+//       const end = new Date(formData.end_date);
+//       if (end < start) {
+//         newErrors.end_date = 'End date must be after start date';
+//       }
+//     }
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+//     if (validate()) {
+//       // Format data for API
+//       const tripData = {
+//         ...formData,
+//         budget: formData.budget ? parseFloat(formData.budget) : null
+//       };
+//       onSubmit(tripData);
+//     }
+//   };
+
+//   return (
+//     <form onSubmit={handleSubmit} className="trip-form">
+//       <div className="form-group">
+//         <label htmlFor="title">Trip Title</label>
+//         <input
+//           type="text"
+//           id="title"
+//           name="title"
+//           value={formData.title}
+//           onChange={handleChange}
+//           className={`form-control ${errors.title ? 'is-invalid' : ''}`}
+//         />
+//         {errors.title && <div className="invalid-feedback">{errors.title}</div>}
+//       </div>
+
+//       <div className="form-group">
+//         <label htmlFor="destination">Destination</label>
+//         <select
+//           id="destination"
+//           name="destination"
+//           value={formData.destination}
+//           onChange={handleChange}
+//           className={`form-control ${errors.destination ? 'is-invalid' : ''}`}
+//         >
+//           <option value="">Select destination</option>
+//           {locations.map(location => (
+//             <option
+//               key={location.id}
+//               value={`${location.name}, ${location.country}`}
+//             >
+//               {location.name}, {location.country}
+//             </option>
+//           ))}
+//         </select>
+//         {errors.destination && <div className="invalid-feedback">{errors.destination}</div>}
+//       </div>
+
+//       <div className="form-row">
+//         <div className="form-group col">
+//           <label htmlFor="start_date">Start Date</label>
+//           <input
+//             type="date"
+//             id="start_date"
+//             name="start_date"
+//             value={formData.start_date}
+//             onChange={handleChange}
+//             className={`form-control ${errors.start_date ? 'is-invalid' : ''}`}
+//           />
+//           {errors.start_date && <div className="invalid-feedback">{errors.start_date}</div>}
+//         </div>
+
+//         <div className="form-group col">
+//           <label htmlFor="end_date">End Date</label>
+//           <input
+//             type="date"
+//             id="end_date"
+//             name="end_date"
+//             value={formData.end_date}
+//             onChange={handleChange}
+//             className={`form-control ${errors.end_date ? 'is-invalid' : ''}`}
+//           />
+//           {errors.end_date && <div className="invalid-feedback">{errors.end_date}</div>}
+//         </div>
+//       </div>
+
+//       <div className="form-group">
+//         <label htmlFor="budget">Budget (optional)</label>
+//         <input
+//           type="number"
+//           id="budget"
+//           name="budget"
+//           value={formData.budget}
+//           onChange={handleChange}
+//           placeholder="Budget in USD"
+//           className="form-control"
+//         />
+//       </div>
+
+//       <div className="form-group">
+//         <label htmlFor="description">Description (optional)</label>
+//         <textarea
+//           id="description"
+//           name="description"
+//           value={formData.description}
+//           onChange={handleChange}
+//           rows="3"
+//           className="form-control"
+//         ></textarea>
+//       </div>
+
+//       <button type="submit" className="btn btn-primary">
+//         {initialData.id ? 'Update Trip' : 'Create Trip'}
+//       </button>
+//     </form>
+//   );
+// };
+
+// export default TripForm;
+
+import React, { useState } from "react";
+import {
+  Box,
+  TextField,
+  Button,
+  Grid,
+  FormControl,
+  FormHelperText,
+  MenuItem,
+  InputAdornment,
+  Typography,
+} from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { Save, X, Calendar, MapPin, DollarSign } from "lucide-react";
+
+// Define locations - in a real app, this would come from an API or database
+const locations = [
+  { id: 1, name: "Rome", country: "Italy" },
+  { id: 2, name: "Paris", country: "France" },
+  { id: 3, name: "Barcelona", country: "Spain" },
+  { id: 4, name: "London", country: "United Kingdom" },
+  { id: 5, name: "Berlin", country: "Germany" },
+  { id: 6, name: "Tokyo", country: "Japan" },
+  { id: 7, name: "New York", country: "USA" },
+  { id: 8, name: "Sydney", country: "Australia" },
+  { id: 9, name: "Cairo", country: "Egypt" },
+  { id: 10, name: "Rio de Janeiro", country: "Brazil" },
+];
+
+const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
+  const parseDate = (dateString) => {
+    if (!dateString) return null;
+    // Create date object ensuring correct format
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    return date;
+  };
+
+  const [formData, setFormData] = useState({
+    title: initialData.title || "",
+    destination: initialData.destination || "",
+    start_date: parseDate(initialData.start_date),
+    end_date: parseDate(initialData.end_date),
+    budget: initialData.budget || "",
+    description: initialData.description || "",
+  });
+
+
+
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+
+    // Clear error when field is edited
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
+  };
+
+  const handleDateChange = (date, fieldName) => {
+    setFormData({
+      ...formData,
+      [fieldName]: date,
+    });
+
+    // Clear error when field is edited
+    if (errors[fieldName]) {
+      setErrors({
+        ...errors,
+        [fieldName]: "",
+      });
+    }
+
+    // If updating start date and it's after end date, update end date too
+    if (
+      fieldName === "start_date" &&
+      formData.end_date &&
+      date > formData.end_date
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        end_date: date,
+      }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.title) newErrors.title = "Title is required";
+    if (!formData.destination)
+      newErrors.destination = "Destination is required";
+    if (!formData.start_date) newErrors.start_date = "Start date is required";
+    if (!formData.end_date) newErrors.end_date = "End date is required";
+
+    // Check if end date is after start date
+    if (
+      formData.start_date &&
+      formData.end_date &&
+      formData.end_date < formData.start_date
+    ) {
+      newErrors.end_date = "End date must be after start date";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (validate()) {
+      // Format dates for API without timezone issues
+      const formattedData = {
+        ...formData,
+        start_date: formData.start_date
+          ? formData.start_date.toLocaleDateString('en-CA') 
+          : null,
+        end_date: formData.end_date
+          ? formData.end_date.toLocaleDateString('en-CA') 
+          : null,
+        budget: formData.budget ? Number(formData.budget) : undefined,
+      };
+
+      onSubmit(formattedData);
+
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
+          {/* Trip Title */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Trip Title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              error={!!errors.title}
+              helperText={errors.title || ""}
+              placeholder="Summer Vacation"
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <MapPin size={18} color="#666" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          {/* Destination */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              select
+              label="Destination"
+              name="destination"
+              value={formData.destination}
+              onChange={handleChange}
+              error={!!errors.destination}
+              helperText={errors.destination || ""}
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <MapPin size={18} color="#666" />
+                  </InputAdornment>
+                ),
+              }}
+            >
+              <MenuItem value="">
+                <em>Select a destination</em>
+              </MenuItem>
+              {locations.map((location) => (
+                <MenuItem
+                  key={location.id}
+                  value={`${location.name}, ${location.country}`}
+                >
+                  {location.name}, {location.country}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          {/* Date Range */}
+          <Grid item xs={12} sm={6}>
+            <DatePicker
+              label="Start Date"
+              value={formData.start_date}
+              onChange={(date) => handleDateChange(date, "start_date")}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  error: !!errors.start_date,
+                  helperText: errors.start_date || "",
+                  InputProps: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Calendar size={18} color="#666" />
+                      </InputAdornment>
+                    ),
+                  },
+                },
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <DatePicker
+              label="End Date"
+              value={formData.end_date}
+              onChange={(date) => handleDateChange(date, "end_date")}
+              minDate={formData.start_date || undefined}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  error: !!errors.end_date,
+                  helperText: errors.end_date || "",
+                  InputProps: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Calendar size={18} color="#666" />
+                      </InputAdornment>
+                    ),
+                  },
+                },
+              }}
+            />
+          </Grid>
+
+          {/* Budget */}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Budget"
+              name="budget"
+              type="number"
+              value={formData.budget}
+              onChange={handleChange}
+              placeholder="0"
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <DollarSign size={18} color="#666" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <FormHelperText>Optional</FormHelperText>
+          </Grid>
+
+          {/* Description */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Add details about your trip..."
+              multiline
+              rows={3}
+              size="small"
+            />
+            <FormHelperText>Optional</FormHelperText>
+          </Grid>
+        </Grid>
+
+        {/* Form Actions */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            mt: 3,
+            gap: 2,
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={handleCancel}
+            startIcon={<X size={16} />}
+            sx={{
+              textTransform: "none",
+              color: "#666",
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disableElevation
+            startIcon={<Save size={16} />}
+            sx={{
+              textTransform: "none",
+              fontWeight: 500,
+            }}
+          >
+            {initialData.id ? "Update Trip" : "Create Trip"}
+          </Button>
+        </Box>
+      </form>
+    </LocalizationProvider>
+  );
+};
+
+export default TripForm;
