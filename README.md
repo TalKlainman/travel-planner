@@ -15,30 +15,14 @@ docker network create travel-planner-network
 
 ### 2. Build and Run the Backend
 
-# Navigate to the backend directory
-
 cd travel-planner/app/backend
-
-# Build the backend Docker image
-
 docker build -t travel-planner-backend .
-
-# Run the backend container
-
 docker run -d --name backend --network travel-planner-network -p 8000:8000 travel-planner-backend
 
 ### 3. Build and Run the Frontend
 
-# Navigate to the frontend directory
-
 cd ../frontend
-
-# Build the frontend Docker image
-
 docker build -t travel-planner-frontend .
-
-# Run the frontend container
-
 docker run -d --name frontend --network travel-planner-network -p 80:80 travel-planner-frontend
 
 ### 4. Access the Application
