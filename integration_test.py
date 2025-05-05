@@ -6,7 +6,7 @@ import json
 from datetime import date, timedelta
 
 # Base URL of your API when running in Docker
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8000/api"  # Added /api to the base URL
 
 def test_api_available():
     """Test if the API is available"""
@@ -16,7 +16,8 @@ def test_api_available():
     
     for i in range(max_retries):
         try:
-            response = requests.get(f"{BASE_URL}/")
+            # Test the root endpoint (without /api)
+            response = requests.get("http://localhost:8000/")
             if response.status_code == 200:
                 return
         except requests.exceptions.ConnectionError:
@@ -372,7 +373,7 @@ def test_unauthorized_access():
     assert response.status_code == 401
     
     # 4. Verify public endpoints still accessible
-    response = requests.get(f"{BASE_URL}/")
+    response = requests.get("http://localhost:8000/")  # Root endpoint without /api
     assert response.status_code == 200
     
     response = requests.get(f"{BASE_URL}/locations/")

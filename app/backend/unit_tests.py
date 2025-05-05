@@ -6,10 +6,10 @@ from datetime import date, timedelta, datetime, UTC
 import os
 import json
 
-from .main import app
-from .database import Base, get_db
-from . import models
-from .auth import get_password_hash
+from main import app
+from database import Base, get_db
+import models
+from auth import get_password_hash
 
 # Create test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"

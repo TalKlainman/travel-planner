@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import date
-from .database import Base
+from database import Base
 
 # SQLAlchemy Models (for database)
 class DBUser(Base):

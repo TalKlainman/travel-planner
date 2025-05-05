@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 
-from .. import models
-from ..database import get_db
-from ..auth import get_current_active_user
+import models
+from database import get_db
+from auth import get_current_active_user
 
 router = APIRouter(
     prefix="/trips",
