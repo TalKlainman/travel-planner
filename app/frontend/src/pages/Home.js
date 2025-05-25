@@ -1,28 +1,3 @@
-// import React from 'react';
-// import { Link } from 'react-router-dom';
-
-// const Home = () => {
-//   return (
-//     <div className="home-container">
-//       <div className="welcome-section">
-//         <h1>Welcome to Travel Planner</h1>
-//         <p>Plan your next adventure with ease.</p>
-
-//         <div className="home-buttons">
-//           <Link to="/login" className="btn btn-primary">
-//             Login
-//           </Link>
-//           <Link to="/register" className="btn btn-secondary">
-//             Register
-//           </Link>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Home;
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Box, Typography, Button, Grid, Paper, Container } from "@mui/material";

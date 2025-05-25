@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine
 import models
 from routers import trips, preferences, locations, auth
+from routers.microservice_routers import map_router, itinerary_router
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -33,6 +34,8 @@ app.include_router(auth.router, prefix="/api")
 app.include_router(trips.router, prefix="/api")
 app.include_router(preferences.router, prefix="/api")
 app.include_router(locations.router, prefix="/api")
+app.include_router(map_router, prefix="/api")
+app.include_router(itinerary_router, prefix="/api")
 
 @app.get("/")
 def read_root():

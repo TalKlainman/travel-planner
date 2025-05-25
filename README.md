@@ -1,58 +1,105 @@
-# Travel Planner Application
+# Smart Travel Planner
 
-This application consists of a FastAPI backend and a React frontend, containerized with Docker. This guide explains how to run both services so they can communicate properly over HTTP.
+A microservices-based travel planning application that helps users create and manage trip itineraries with AI-generated recommendations based on personal preferences.
 
-## Prerequisites
+## Architecture
 
-- Docker installed on your computer
+The application is built using a microservices architecture with the following components:
 
-## Running the Application
+- **Frontend**: React-based UI for user interaction
+- **Backend**: FastAPI service for core functionality and data persistence
+- **Itinerary Service**: AI-powered trip itinerary generator using Ollama
+- **Map Service**: Location search and nearby attractions using OpenStreetMap
+- **Database**: PostgreSQL for data storage
+- **LLM Service**: Ollama for natural language processing
 
-### 1. Create a Docker Network
+## Features
 
-```bash
-First, create a Docker network to allow the containers to communicate:
-docker network create travel-planner-network
-```
+- User authentication (login/registration)
+- Trip planning with date ranges and budgets
+- Personal preference management
+- AI-generated itineraries based on preferences
+- Location search and discovery
+- Nearby attraction recommendations
+- Responsive design for mobile and desktop
 
-### 2. Build and Run the Backend
+## Getting Started
 
-```bash
-cd travel-planner/app/backend
-docker build -t travel-planner-backend .
-docker run -d --name backend --network travel-planner-network -p 8000:8000 travel-planner-backend
-```
+### Prerequisites
 
-### 3. Build and Run the Frontend
+- Docker and Docker Compose
+- Git
 
-```bash
-cd ../frontend
-docker build -t travel-planner-frontend .
-docker run -d --name frontend --network travel-planner-network -p 80:80 travel-planner-frontend
-```
+### Installation
 
-### 4. Access the Application
+1. Clone the repository:
+   git clone https://github.com/EASS-HIT-PART-A-2025-CLASS-VII/travel-planner.git
+   cd travel-planner
 
-```bash
+2. Start the application:
+   docker-compose up -d
+
+3. Access the application:
+
 - Frontend: http://localhost
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
-```
+- Backend API: http://localhost:8000/docs
+- Itinerary Service API: http://localhost:8001/docs
+- Map Service API: http://localhost:8002/docs
 
-## Stopping the Application
+### Running Tests
 
-```bash
-To stop and remove the containers:
-docker stop frontend backend
-docker rm frontend backend
+To run the integration tests:
+python integration_test.py
 
-To remove the network when done:
-docker network rm travel-planner-network
-```
+## Microservices
+
+### Frontend Service (Port 80)
+
+React-based frontend application with Material UI components.
+
+### Backend Service (Port 8000)
+
+FastAPI application that handles core functionality:
+
+- User authentication
+- Trip management
+- Preference storage
+- API gateway to other services
+
+### Itinerary Service (Port 8001)
+
+Generates AI-powered trip itineraries using Ollama:
+
+- Day-by-day activity planning
+- Preference-based customization
+- Budget-aware recommendations
+
+### Map Service (Port 8002)
+
+Provides location data and nearby attractions:
+
+- Location search
+- Country-based filtering
+- Nearby point of interest discovery
 
 ## Project Structure
 
-```bash
-- `travel-planner/app/backend/`: FastAPI backend service
-- `travel-planner/app/frontend/`: React frontend application
-```
+travel-planner/
+├── app/
+│ ├── backend/ # Core FastAPI application
+│ ├── frontend/ # React frontend
+│ ├── itinerary-service/ # Itinerary generation microservice
+│ └── map-service/ # Location data microservice
+├── integration_test.py # Integration test script
+├── docker-compose.yml # Docker Compose configuration
+└── README.md # Project documentation
+
+## Technologies Used
+
+- **Frontend**: React, Material UI, React Router
+- **Backend**: FastAPI, SQLAlchemy, JWT Authentication
+- **Database**: PostgreSQL
+- **AI**: Ollama (Llama 3)
+- **Map**: OpenStreetMap APIs
+- **Containerization**: Docker, Docker Compose
+- **Testing**: httpx, pytest

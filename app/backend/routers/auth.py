@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 import models
 from database import get_db
-from auth import authenticate_user, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES
+from auth import authenticate_user, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_active_user
 
 router = APIRouter(
     tags=["authentication"],
@@ -43,3 +43,8 @@ def register_user(user: models.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+@router.get("/profile", response_model=models.User)
+def get_user_profile(current_user: models.DBUser = Depends(get_current_active_user)):
+    """Get the profile of the current authenticated user"""
+    return current_user

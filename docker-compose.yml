@@ -1,0 +1,198 @@
+# version: '3'
+
+# services:
+#   # Frontend Service
+#   frontend:
+#     build:
+#       context: ./app/frontend
+#     ports:
+#       - "80:80"
+#     depends_on:
+#       - backend
+#       - itinerary-service
+#       - map-service
+#     networks:
+#       - travel-planner-network
+
+#   # Main Backend Service
+#   backend:
+#     build:
+#       context: ./app/backend
+#     ports:
+#       - "8000:8000"
+#     environment:
+#       - DATABASE_URL=postgresql://postgres:postgres@postgres-service:5432/traveldb
+#       - ITINERARY_SERVICE_URL=http://itinerary-service:8001
+#       - MAP_SERVICE_URL=http://map-service:8002
+#     depends_on:
+#       - postgres-service
+#       - itinerary-service
+#       - map-service
+#     networks:
+#       - travel-planner-network
+
+#   # Itinerary Generator Microservice
+#   itinerary-service:
+#     build:
+#       context: ./app/itinerary-service
+#     ports:
+#       - "8001:8001"
+#     environment:
+#       - OLLAMA_URL=http://ollama:11434
+#     depends_on:
+#       - ollama
+#     networks:
+#       - travel-planner-network
+
+#   # Map Service Microservice
+#   map-service:
+#     build:
+#       context: ./app/map-service
+#     ports:
+#       - "8002:8002"
+#     environment:
+#       - OSM_API_KEY=your_osm_api_key
+#     networks:
+#       - travel-planner-network
+
+#   # PostgreSQL Database Microservice
+#   postgres-service:
+#     image: postgres:14
+#     ports:
+#       - "5432:5432"
+#     environment:
+#       - POSTGRES_USER=postgres
+#       - POSTGRES_PASSWORD=postgres
+#       - POSTGRES_DB=traveldb
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     networks:
+#       - travel-planner-network
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U postgres"]
+#       interval: 5s
+#       timeout: 5s
+#       retries: 5
+
+#   # Ollama LLM Service
+#   ollama:
+#     image: ollama/ollama
+#     ports:
+#       - "11434:11434"
+#     volumes:
+#       - ollama_data:/root/.ollama
+#     networks:
+#       - travel-planner-network
+
+# networks:
+#   travel-planner-network:
+#     driver: bridge
+
+# volumes:
+#   postgres_data:
+#   ollama_data:
+
+version: '3'
+
+services:
+  # Frontend Service
+  frontend:
+    build:
+      context: ./app/frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - itinerary-service
+      - map-service
+    networks:
+      - travel-planner-network
+    container_name: travel-planner-frontend
+
+  # Main Backend Service
+  backend:
+    build:
+      context: ./app/backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres-service:5432/traveldb
+      - ITINERARY_SERVICE_URL=http://itinerary-service:8001
+      - MAP_SERVICE_URL=http://map-service:8002
+    depends_on:
+      - postgres-service
+      - itinerary-service
+      - map-service
+    networks:
+      - travel-planner-network
+    container_name: travel-planner-backend
+
+  # Itinerary Generator Microservice
+  itinerary-service:
+    build:
+      context: ./app/itinerary-service
+    ports:
+      - "8001:8001"
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3
+    depends_on:
+      - ollama
+    networks:
+      - travel-planner-network
+    container_name: travel-planner-itinerary-service
+
+  # Map Service Microservice
+  map-service:
+    build:
+      context: ./app/map-service
+    ports:
+      - "8002:8002"
+    environment:
+      - OSM_API_KEY=your_osm_api_key
+    networks:
+      - travel-planner-network
+    container_name: travel-planner-map-service
+
+  # PostgreSQL Database Microservice
+  postgres-service:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=traveldb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - travel-planner-network
+    container_name: travel-planner-postgres-service
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Ollama LLM Service
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - travel-planner-network
+    container_name: travel-planner-ollama
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+
+networks:
+  travel-planner-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  ollama_data:

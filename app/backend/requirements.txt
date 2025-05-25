@@ -9,3 +9,6 @@ passlib>=1.7.4
 python-multipart
 bcrypt>=4.0.1
 requests>=2.31.0
+httpx>=0.24.0
+asyncio>=3.4.3
+psycopg2-binary>=2.9.3  # For PostgreSQL support
