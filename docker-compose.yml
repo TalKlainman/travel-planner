@@ -1,4 +1,4 @@
-# version: '3'
+# version: '3.8'
 
 # services:
 #   # Frontend Service
@@ -13,6 +13,8 @@
 #       - map-service
 #     networks:
 #       - travel-planner-network
+#     container_name: travel-planner-frontend
+#     restart: unless-stopped
 
 #   # Main Backend Service
 #   backend:
@@ -25,11 +27,16 @@
 #       - ITINERARY_SERVICE_URL=http://itinerary-service:8001
 #       - MAP_SERVICE_URL=http://map-service:8002
 #     depends_on:
-#       - postgres-service
-#       - itinerary-service
-#       - map-service
+#       postgres-service:
+#         condition: service_healthy
+#       itinerary-service:
+#         condition: service_started
+#       map-service:
+#         condition: service_started
 #     networks:
 #       - travel-planner-network
+#     container_name: travel-planner-backend
+#     restart: unless-stopped
 
 #   # Itinerary Generator Microservice
 #   itinerary-service:
@@ -38,11 +45,19 @@
 #     ports:
 #       - "8001:8001"
 #     environment:
-#       - OLLAMA_URL=http://ollama:11434
+#       # - OLLAMA_URL=http://ollama:11434
+#       # - OLLAMA_MODEL=llama3.1:8b
+#       - DATABASE_URL=postgresql://postgres:postgres@postgres-service:5432/traveldb
+#       - GROQ_API_KEY=gsk_kxStIzYr139tUaKDp156WGdyb3FYIfi3pmd50KGtXeX50qtvarX 
 #     depends_on:
-#       - ollama
+#       postgres-service:
+#         condition: service_healthy
+#       # ollama:
+#       #   condition: service_started
 #     networks:
 #       - travel-planner-network
+#     container_name: travel-planner-itinerary-service
+#     restart: unless-stopped
 
 #   # Map Service Microservice
 #   map-service:
@@ -54,6 +69,8 @@
 #       - OSM_API_KEY=your_osm_api_key
 #     networks:
 #       - travel-planner-network
+#     container_name: travel-planner-map-service
+#     restart: unless-stopped
 
 #   # PostgreSQL Database Microservice
 #   postgres-service:
@@ -68,11 +85,14 @@
 #       - postgres_data:/var/lib/postgresql/data
 #     networks:
 #       - travel-planner-network
+#     container_name: travel-planner-postgres-service
+#     restart: unless-stopped
 #     healthcheck:
-#       test: ["CMD-SHELL", "pg_isready -U postgres"]
-#       interval: 5s
+#       test: ["CMD-SHELL", "pg_isready -U postgres -d traveldb"]
+#       interval: 10s
 #       timeout: 5s
 #       retries: 5
+#       start_period: 30s
 
 #   # Ollama LLM Service
 #   ollama:
@@ -83,6 +103,12 @@
 #       - ollama_data:/root/.ollama
 #     networks:
 #       - travel-planner-network
+#     container_name: travel-planner-ollama
+#     restart: unless-stopped
+#     deploy:
+#       resources:
+#         limits:
+#           memory: 8G
 
 # networks:
 #   travel-planner-network:
@@ -90,9 +116,11 @@
 
 # volumes:
 #   postgres_data:
+#     driver: local
 #   ollama_data:
+#     driver: local
 
-version: '3'
+version: '3.8'
 
 services:
   # Frontend Service
@@ -108,6 +136,7 @@ services:
     networks:
       - travel-planner-network
     container_name: travel-planner-frontend
+    restart: unless-stopped
 
   # Main Backend Service
   backend:
@@ -120,27 +149,33 @@ services:
       - ITINERARY_SERVICE_URL=http://itinerary-service:8001
       - MAP_SERVICE_URL=http://map-service:8002
     depends_on:
-      - postgres-service
-      - itinerary-service
-      - map-service
+      postgres-service:
+        condition: service_healthy
+      itinerary-service:
+        condition: service_started
+      map-service:
+        condition: service_started
     networks:
       - travel-planner-network
     container_name: travel-planner-backend
+    restart: unless-stopped
 
-  # Itinerary Generator Microservice
+  # Itinerary Generator Microservice (using Groq API)
   itinerary-service:
     build:
       context: ./app/itinerary-service
     ports:
       - "8001:8001"
     environment:
-      - OLLAMA_URL=http://ollama:11434
-      - OLLAMA_MODEL=llama3
+      - DATABASE_URL=postgresql://postgres:postgres@postgres-service:5432/traveldb
+      - GROQ_API_KEY=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 
     depends_on:
-      - ollama
+      postgres-service:
+        condition: service_healthy
     networks:
       - travel-planner-network
     container_name: travel-planner-itinerary-service
+    restart: unless-stopped
 
   # Map Service Microservice
   map-service:
@@ -153,6 +188,7 @@ services:
     networks:
       - travel-planner-network
     container_name: travel-planner-map-service
+    restart: unless-stopped
 
   # PostgreSQL Database Microservice
   postgres-service:
@@ -168,26 +204,13 @@ services:
     networks:
       - travel-planner-network
     container_name: travel-planner-postgres-service
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d traveldb"]
+      interval: 10s
       timeout: 5s
       retries: 5
-
-  # Ollama LLM Service
-  ollama:
-    image: ollama/ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - travel-planner-network
-    container_name: travel-planner-ollama
-    deploy:
-      resources:
-        limits:
-          memory: 8G
+      start_period: 30s
 
 networks:
   travel-planner-network:
@@ -195,4 +218,4 @@ networks:
 
 volumes:
   postgres_data:
-  ollama_data:
+    driver: local
