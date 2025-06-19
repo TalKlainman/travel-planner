@@ -1,437 +1,3 @@
-# from fastapi import FastAPI, HTTPException, BackgroundTasks
-# from pydantic import BaseModel
-# from typing import List, Dict, Any, Optional
-# import httpx
-# import json
-# import os
-# import time
-# import asyncio
-# from datetime import datetime, timedelta
-# import logging
-# import asyncpg
-# import uuid
-
-# # Configure logging
-# logging.basicConfig(level=logging.INFO, 
-#                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# logger = logging.getLogger("itinerary-service")
-
-# app = FastAPI(
-#     title="Itinerary Generator Service",
-#     description="LLM-powered trip itinerary generation service using Ollama",
-#     version="1.0.0",
-# )
-
-# # Database configuration
-# DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@postgres-service:5432/traveldb")
-
-# # Configuration for Ollama
-# OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
-# OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma2:2b")
-
-# class ItineraryRequest(BaseModel):
-#     destination: str
-#     start_date: str
-#     end_date: str
-#     preferences: Optional[List[Dict[str, Any]]] = []
-#     budget: Optional[float] = None
-
-# class ItineraryResponse(BaseModel):
-#     itinerary: Dict[str, Any]
-
-# class StatusResponse(BaseModel):
-#     status: str
-#     message: str
-#     eta: Optional[int] = None
-
-# # Database connection pool
-# db_pool = None
-
-# async def init_db_pool():
-#     """Initialize database connection pool"""
-#     global db_pool
-#     try:
-#         db_pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=10)
-#         logger.info("Database pool initialized")
-        
-#         # Add generation tracking columns to trips table if they don't exist
-#         async with db_pool.acquire() as conn:
-#             await conn.execute("""
-#                 ALTER TABLE trips 
-#                 ADD COLUMN IF NOT EXISTS generation_status VARCHAR(20) DEFAULT 'pending',
-#                 ADD COLUMN IF NOT EXISTS generation_id UUID,
-#                 ADD COLUMN IF NOT EXISTS generation_started_at TIMESTAMP,
-#                 ADD COLUMN IF NOT EXISTS generation_updated_at TIMESTAMP;
-                
-#                 CREATE INDEX IF NOT EXISTS idx_trips_generation_id ON trips(generation_id);
-#                 CREATE INDEX IF NOT EXISTS idx_trips_generation_status ON trips(generation_status);
-#             """)
-#             logger.info("Itineraries table ready")
-            
-#     except Exception as e:
-#         logger.error(f"Failed to initialize database pool: {e}")
-
-# async def close_db_pool():
-#     """Close database connection pool"""
-#     global db_pool
-#     if db_pool:
-#         await db_pool.close()
-#         logger.info("Database pool closed")
-
-# @app.on_event("startup")
-# async def startup_event():
-#     await init_db_pool()
-
-# @app.on_event("shutdown") 
-# async def shutdown_event():
-#     await close_db_pool()
-
-# @app.get("/")
-# async def read_root():
-#     """Health check endpoint"""
-#     return {"status": "healthy", "service": "itinerary-generator"}
-
-# async def get_itinerary_from_db(trip_id: int):
-#     """Get itinerary from database using trips table"""
-#     async with db_pool.acquire() as conn:
-#         row = await conn.fetchrow(
-#             "SELECT itinerary, generation_status, generation_id, generation_started_at FROM trips WHERE id = $1",
-#             trip_id
-#         )
-#         return row
-
-# async def save_itinerary_to_db(trip_id: int, content: dict, status: str = "completed", generation_id: str = None):
-#     """Save itinerary to trips table"""
-#     async with db_pool.acquire() as conn:
-#         await conn.execute(
-#             """UPDATE trips 
-#                SET itinerary = $1, generation_status = $2, generation_updated_at = NOW() 
-#                WHERE id = $3""",
-#             json.dumps(content), status, trip_id
-#         )
-
-# async def create_generation_record(trip_id: int):
-#     """Create a generation record and return generation ID"""
-#     generation_id = str(uuid.uuid4())
-#     async with db_pool.acquire() as conn:
-#         await conn.execute(
-#             """UPDATE trips 
-#                SET generation_status = $1, generation_id = $2, generation_started_at = NOW()
-#                WHERE id = $3""",
-#             "processing", generation_id, trip_id
-#         )
-#     return generation_id
-
-# async def get_generation_status(generation_id: str):
-#     """Get generation status from trips table"""
-#     async with db_pool.acquire() as conn:
-#         row = await conn.fetchrow(
-#             "SELECT generation_status, generation_started_at FROM trips WHERE generation_id = $1",
-#             generation_id
-#         )
-#         return row
-
-# async def generate_with_ollama(prompt):
-#     """Generate text using Ollama LLM service"""
-#     try:
-#         logger.info(f"Calling Ollama with prompt length: {len(prompt)}")
-#         model = OLLAMA_MODEL
-#         if ":" not in model:
-#             model = f"{model}:latest"
-            
-#         async with httpx.AsyncClient() as client:
-#             logger.info(f"Sending request to: {OLLAMA_URL}/api/generate with model: {model}")
-#             response = await client.post(
-#                 f"{OLLAMA_URL}/api/generate",
-#                 json={
-#                     "model": model,
-#                     "prompt": prompt,
-#                     "stream": False,
-#                     "options": {
-#                         "temperature": 0.7,
-#                         "top_p": 0.9
-#                     }
-#                 },
-#                 timeout=600.0
-#             )
-            
-#             logger.info(f"Ollama response status: {response.status_code}")
-#             if response.status_code != 200:
-#                 logger.error(f"Ollama API error: {response.status_code} - {response.text}")
-#                 return None
-                
-#             result = response.json()
-#             logger.info(f"Ollama response length: {len(result.get('response', ''))}")
-#             return result.get("response")
-#     except Exception as e:
-#         logger.error(f"Error calling Ollama: {str(e)}, type: {type(e)}")
-#         return None
-
-# def create_geographic_prompt(request: ItineraryRequest, start_date: datetime, end_date: datetime, days_count: int) -> str:
-#     """Create a simple prompt optimized for small models"""
-    
-#     prompt = f"""Create a {days_count} day travel itinerary for {request.destination} from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}.
-
-# RULES:
-# - Each day stay in 1 neighborhood only
-# - All activities walking distance from each other
-# - Real specific places and restaurants"""
-
-#     # Add preferences very simply
-#     if request.preferences:
-#         prompt += "\n\nUser wants:"
-#         for pref in request.preferences:
-#             value = pref.get('value', '')
-#             weight = pref.get('weight', 5)
-#             if weight >= 6:
-#                 prompt += f"\n- {value} (important)"
-#             else:
-#                 prompt += f"\n- {value}"
-
-#     prompt += f"""
-
-# Generate exactly {days_count} days in JSON format:
-# {{"""
-
-#     for i in range(days_count):
-#         current_date = start_date + timedelta(days=i)
-#         if i > 0:
-#             prompt += ","
-#         prompt += f'''
-#   "Day {i+1}": {{
-#     "date": "{current_date.strftime('%Y-%m-%d')}",
-#     "08:00": {{"type": "breakfast", "title": "Breakfast place", "location": "area"}},
-#     "10:00": {{"type": "activity", "title": "Activity", "location": "same area"}},
-#     "13:00": {{"type": "lunch", "title": "Lunch place", "location": "same area"}},
-#     "15:00": {{"type": "activity", "title": "Activity", "location": "same area"}},
-#     "19:00": {{"type": "dinner", "title": "Dinner place", "location": "same area"}}
-#   }}'''
-
-#     prompt += "\n}\n\nReturn only JSON."
-    
-#     return prompt
-
-# async def generate_itinerary_task(trip_id: int, request: ItineraryRequest, generation_id: str):
-#     """Background task to generate an itinerary using Ollama"""
-#     try:
-#         logger.info(f"Starting itinerary generation for trip {trip_id}, generation {generation_id}")
-#         logger.info(f"Date range: {request.start_date} to {request.end_date}")
-        
-#         # Parse dates
-#         start_date = datetime.fromisoformat(request.start_date.replace('Z', '+00:00') if 'Z' in request.start_date else request.start_date)
-#         end_date = datetime.fromisoformat(request.end_date.replace('Z', '+00:00') if 'Z' in request.end_date else request.end_date)
-#         days_count = (end_date - start_date).days + 1
-        
-#         logger.info(f"Calculated days_count: {days_count} (from {start_date.date()} to {end_date.date()})")
-        
-#         # Create geographically-aware prompt
-#         prompt = create_geographic_prompt(request, start_date, end_date, days_count)
-        
-#         logger.info(f"Generated geographic prompt for {days_count} days")
-        
-#         # Call Ollama
-#         logger.info(f"Sending prompt to Ollama for trip {trip_id}")
-#         llm_response = await generate_with_ollama(prompt)
-        
-#         # Parse response with improved JSON handling
-#         if llm_response:
-#             logger.info(f"Received response from Ollama for trip {trip_id}")
-#             try:
-#                 # Clean the response
-#                 cleaned_response = llm_response.strip()
-                
-#                 if '{' in cleaned_response:
-#                     cleaned_response = cleaned_response[cleaned_response.find('{'):]
-                
-#                 if '}' in cleaned_response:
-#                     cleaned_response = cleaned_response[:cleaned_response.rfind('}') + 1]
-                
-#                 # Try to find JSON in code blocks
-#                 if "```json" in llm_response:
-#                     logger.info("Extracting JSON from code block with json tag")
-#                     json_str = llm_response.split("```json", 1)[1].split("```", 1)[0].strip()
-#                     cleaned_response = json_str
-#                 elif "```" in llm_response and llm_response.count("```") >= 2:
-#                     logger.info("Extracting JSON from generic code block")
-#                     json_str = llm_response.split("```", 1)[1].split("```", 1)[0].strip()
-#                     cleaned_response = json_str
-                
-#                 # Additional cleaning
-#                 cleaned_response = cleaned_response.replace('\n', ' ')
-#                 cleaned_response = ' '.join(cleaned_response.split())
-                
-#                 logger.info(f"Attempting to parse cleaned JSON of length: {len(cleaned_response)}")
-#                 itinerary_json = json.loads(cleaned_response)
-                
-#                 # Save to database
-#                 await save_itinerary_to_db(trip_id, itinerary_json, "completed", generation_id)
-#                 logger.info(f"Successfully generated and saved itinerary for trip {trip_id}")
-#                 return
-                
-#             except json.JSONDecodeError as e:
-#                 logger.error(f"Error parsing LLM response for trip {trip_id}: {str(e)}")
-#                 logger.error(f"Failed response content: {cleaned_response[:500]}...")
-#             except Exception as e:
-#                 logger.error(f"Unexpected error parsing response for trip {trip_id}: {str(e)}")
-#         else:
-#             logger.error(f"No response received from Ollama for trip {trip_id}")
-        
-#         # Fallback: Create template itinerary
-#         logger.info(f"Using fallback template itinerary for trip {trip_id}")
-#         itinerary = {}
-        
-#         for i in range(days_count):
-#             current_date = start_date + timedelta(days=i)
-#             day_key = f"Day {i+1}"
-            
-#             itinerary[day_key] = {
-#                 "date": current_date.strftime("%Y-%m-%d"),
-#                 "08:00": {"type": "breakfast", "title": "Breakfast at local café", "location": "City center"},
-#                 "10:00": {"type": "sightseeing", "title": f"Explore {request.destination}", "location": "City center"},
-#                 "13:00": {"type": "lunch", "title": "Lunch at local restaurant", "location": "City center"},
-#                 "15:00": {"type": "sightseeing", "title": f"Visit local attractions in {request.destination}", "location": "City center"},
-#                 "19:00": {"type": "dinner", "title": "Dinner at recommended restaurant", "location": "City center"}
-#             }
-        
-#         # Save fallback itinerary
-#         await save_itinerary_to_db(trip_id, itinerary, "completed", generation_id)
-#         logger.info(f"Generated and saved fallback itinerary for trip {trip_id}")
-        
-#     except Exception as e:
-#         logger.error(f"Error generating itinerary for trip {trip_id}: {str(e)}")
-#         # Mark as failed in database
-#         try:
-#             await save_itinerary_to_db(trip_id, {"error": str(e)}, "failed", generation_id)
-#         except:
-#             pass
-
-# @app.post("/generate/{trip_id}", status_code=202)
-# async def start_itinerary_generation(trip_id: str, request: ItineraryRequest, background_tasks: BackgroundTasks):
-#     """Start generating a personalized travel itinerary"""
-    
-#     try:
-#         trip_id_int = int(trip_id)
-#     except ValueError:
-#         raise HTTPException(status_code=400, detail="Trip ID must be an integer")
-    
-#     # Check if itinerary already exists
-#     existing = await get_itinerary_from_db(trip_id_int)
-#     if existing and existing['generation_status'] == 'completed':
-#         return {"message": "Itinerary already exists", "itinerary_id": trip_id}
-    
-#     # Check if generation is already in progress
-#     if existing and existing['generation_status'] == 'processing':
-#         return {"message": "Itinerary generation in progress", "itinerary_id": trip_id}
-    
-#     # Create new generation record
-#     generation_id = await create_generation_record(trip_id_int)
-    
-#     # Start background task
-#     background_tasks.add_task(generate_itinerary_task, trip_id_int, request, generation_id)
-    
-#     return {"message": "Itinerary generation started", "itinerary_id": trip_id}
-
-# @app.get("/status/{trip_id}", response_model=StatusResponse)
-# async def get_generation_status_endpoint(trip_id: str):
-#     """Get the status of an itinerary generation task"""
-#     try:
-#         trip_id_int = int(trip_id)
-#     except ValueError:
-#         raise HTTPException(status_code=400, detail="Trip ID must be an integer")
-    
-#     itinerary_data = await get_itinerary_from_db(trip_id_int)
-    
-#     if not itinerary_data:
-#         raise HTTPException(status_code=404, detail="No generation task found for this trip")
-    
-#     status = itinerary_data['generation_status']
-    
-#     if status == 'processing':
-#         # Calculate ETA
-#         creation_time = itinerary_data.get('generation_started_at', datetime.now())
-#         if hasattr(creation_time, 'timestamp'):
-#             elapsed = time.time() - creation_time.timestamp()
-#         else:
-#             elapsed = 0
-#         eta = max(1, int(45 - elapsed))
-#         return {"status": "processing", "message": "Itinerary generation in progress", "eta": eta}
-#     elif status == 'completed':
-#         return {"status": "completed", "message": "Itinerary generation completed"}
-#     else:
-#         return {"status": "failed", "message": "Itinerary generation failed"}
-
-# @app.get("/itinerary/{trip_id}", response_model=ItineraryResponse)
-# async def get_itinerary(trip_id: str):
-#     """Get a generated itinerary"""
-#     try:
-#         trip_id_int = int(trip_id)
-#     except ValueError:
-#         raise HTTPException(status_code=400, detail="Trip ID must be an integer")
-    
-#     itinerary_data = await get_itinerary_from_db(trip_id_int)
-    
-#     if not itinerary_data:
-#         raise HTTPException(status_code=404, detail="Itinerary not found")
-    
-#     if itinerary_data['generation_status'] == 'processing':
-#         raise HTTPException(status_code=202, detail="Itinerary generation in progress")
-    
-#     if itinerary_data['generation_status'] == 'failed':
-#         raise HTTPException(status_code=500, detail="Itinerary generation failed")
-    
-#     # Parse JSON content
-#     try:
-#         content = json.loads(itinerary_data['itinerary']) if isinstance(itinerary_data['itinerary'], str) else itinerary_data['itinerary']
-#     except:
-#         content = itinerary_data['itinerary']
-    
-#     return {"itinerary": content}
-
-# # Alias endpoints
-# @app.get("/{trip_id}", response_model=ItineraryResponse)
-# async def get_itinerary_root(trip_id: str):
-#     return await get_itinerary(trip_id)
-
-# @app.get("/itinerary/itinerary/{trip_id}", response_model=ItineraryResponse)
-# async def get_itinerary_alternate(trip_id: str):
-#     return await get_itinerary(trip_id)
-
-# # Admin endpoints for testing
-# @app.delete("/clear/{trip_id}")
-# async def clear_itinerary(trip_id: str):
-#     """Clear itinerary for a specific trip"""
-#     try:
-#         trip_id_int = int(trip_id)
-#     except ValueError:
-#         raise HTTPException(status_code=400, detail="Trip ID must be an integer")
-    
-#     async with db_pool.acquire() as conn:
-#         await conn.execute(
-#             """UPDATE trips 
-#                SET itinerary = NULL, generation_status = 'pending', generation_id = NULL, 
-#                    generation_started_at = NULL, generation_updated_at = NULL 
-#                WHERE id = $1""", 
-#             trip_id_int
-#         )
-    
-#     return {"message": f"Cleared itinerary for trip {trip_id}"}
-
-# @app.delete("/clear-all")
-# async def clear_all_itineraries():
-#     """Clear all itineraries (for testing)"""
-#     async with db_pool.acquire() as conn:
-#         await conn.execute(
-#             """UPDATE trips 
-#                SET itinerary = NULL, generation_status = 'pending', generation_id = NULL,
-#                    generation_started_at = NULL, generation_updated_at = NULL"""
-#         )
-    
-#     return {"message": "Cleared all itineraries"}
-
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
-
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -453,7 +19,7 @@ logger = logging.getLogger("itinerary-service")
 
 app = FastAPI(
     title="Itinerary Generator Service",
-    description="AI-powered trip itinerary generation service using Groq",
+    description="AI-powered trip itinerary generation service using Groq with address coordinates",
     version="1.0.0",
 )
 
@@ -575,13 +141,13 @@ async def generate_with_groq(prompt):
                 json={
                     "model": "llama3-70b-8192",  # Much smarter than local models
                     "messages": [
-                        {"role": "system", "content": "You are a travel expert who creates geographically logical itineraries. Always return valid JSON with real place names."},
+                        {"role": "system", "content": "You are a local travel expert with detailed knowledge of specific addresses and locations. You know the exact addresses of popular restaurants, attractions, and landmarks. Always include real, specific addresses in your recommendations."},
                         {"role": "user", "content": prompt}
                     ],
                     "temperature": 0.3,
-                    "max_tokens": 4000  # Increased for longer itineraries
+                    "max_tokens": 6000  # Increased for addresses
                 },
-                timeout=30.0  
+                timeout=45.0  # Increased timeout for more detailed responses
             )
             
             logger.info(f"Groq API response status: {response.status_code}")
@@ -673,6 +239,9 @@ def clean_and_parse_json(llm_response: str) -> dict:
         # Extract any place names mentioned  
         title_matches = re.findall(r'"title":\s*"([^"]*)"', llm_response)
         
+        # Extract addresses
+        address_matches = re.findall(r'"address":\s*"([^"]*)"', llm_response)
+        
         # Extract dates
         date_matches = re.findall(r'"date":\s*"([^"]*)"', llm_response)
         
@@ -687,11 +256,7 @@ def clean_and_parse_json(llm_response: str) -> dict:
                     day_numbers.append(num)
         
         if district_matches and title_matches and len(day_numbers) > 0:
-            logger.info(f"Found {len(district_matches)} districts, {len(title_matches)} places, {len(day_numbers)} days")
-            
-            # Distribute content across days
-            districts_per_day = len(district_matches) // len(day_numbers) if len(day_numbers) > 0 else 1
-            titles_per_day = len(title_matches) // len(day_numbers) if len(day_numbers) > 0 else 5
+            logger.info(f"Found {len(district_matches)} districts, {len(title_matches)} places, {len(address_matches)} addresses, {len(day_numbers)} days")
             
             for i, day_num in enumerate(day_numbers):
                 day_key = f"Day {day_num}"
@@ -707,23 +272,26 @@ def clean_and_parse_json(llm_response: str) -> dict:
                 # Get titles for this day (5 activities per day)
                 start_title_idx = i * 5
                 day_titles = title_matches[start_title_idx:start_title_idx + 5]
+                day_addresses = address_matches[start_title_idx:start_title_idx + 5] if address_matches else []
                 
                 # Pad with generic titles if not enough
                 while len(day_titles) < 5:
                     day_titles.append(f"Local activity in {district}")
+                while len(day_addresses) < 5:
+                    day_addresses.append(f"{district}, nearby")
                 
                 result[day_key] = {
                     "date": date,
                     "district": district,
-                    "09:00": {"type": "breakfast", "title": day_titles[0], "location": district},
-                    "11:00": {"type": "sightseeing", "title": day_titles[1], "location": district},
-                    "13:00": {"type": "lunch", "title": day_titles[2], "location": district},
-                    "15:30": {"type": "activity", "title": day_titles[3], "location": district},
-                    "19:00": {"type": "dinner", "title": day_titles[4], "location": district}
+                    "09:00": {"type": "breakfast", "title": day_titles[0], "location": district, "address": day_addresses[0]},
+                    "11:00": {"type": "sightseeing", "title": day_titles[1], "location": district, "address": day_addresses[1]},
+                    "13:00": {"type": "lunch", "title": day_titles[2], "location": district, "address": day_addresses[2]},
+                    "15:30": {"type": "activity", "title": day_titles[3], "location": district, "address": day_addresses[3]},
+                    "19:00": {"type": "dinner", "title": day_titles[4], "location": district, "address": day_addresses[4]}
                 }
             
             if result:
-                logger.info(f"Smart extraction created {len(result)} days with real place names")
+                logger.info(f"Smart extraction created {len(result)} days with real place names and addresses")
                 return result
                 
     except Exception as e:
@@ -732,15 +300,16 @@ def clean_and_parse_json(llm_response: str) -> dict:
     # Strategy 8: Return None to trigger fallback
     return None
 
-def create_geographic_prompt(request: ItineraryRequest, start_date: datetime, end_date: datetime, days_count: int) -> str:
-    """Create a concise geographic prompt to avoid token limits"""
+def create_geographic_prompt_with_addresses(request: ItineraryRequest, start_date: datetime, end_date: datetime, days_count: int) -> str:
+    """Create a detailed geographic prompt that requests specific addresses"""
     
-    prompt = f"""Create a {days_count}-day {request.destination} itinerary.
+    prompt = f"""Create a {days_count}-day {request.destination} itinerary with SPECIFIC ADDRESSES.
 
-RULES:
-- Each day = ONE neighborhood only
-- Walking distance activities  
-- Real place names only
+CRITICAL REQUIREMENTS:
+- Each day = ONE neighborhood/district only (walking distance)
+- Include REAL, SPECIFIC street addresses for every location
+- Use actual restaurant names, attraction names, and their real addresses
+- Activities within 2-3km of each other per day
 
 PREFERENCES:"""
     
@@ -751,11 +320,16 @@ PREFERENCES:"""
             if weight >= 6:
                 prompt += f"\n- {value}"
     else:
-        prompt += "\n- Sightseeing & local food"
+        prompt += "\n- Mix of sightseeing, local food, and cultural experiences"
 
     prompt += f"""
 
-JSON format:
+EXAMPLE ADDRESS FORMAT:
+- "Ristorante Da Valentino, Via del Collegio Romano 20, Rome"
+- "Pantheon, Piazza della Rotonda, Rome" 
+- "Caffè Sant'Eustachio, Piazza di Sant'Eustachio 82, Rome"
+
+JSON FORMAT (include real addresses):
 {{"""
 
     for i in range(days_count):
@@ -767,23 +341,55 @@ JSON format:
         prompt += f'''
   "Day {i+1}": {{
     "date": "{current_date.strftime('%Y-%m-%d')}",
-    "district": "Real {request.destination} neighborhood",
-    "09:00": {{"type": "breakfast", "title": "Real cafe name", "location": "Same district"}},
-    "11:00": {{"type": "sightseeing", "title": "Real attraction", "location": "Same district"}},
-    "13:00": {{"type": "lunch", "title": "Real restaurant", "location": "Same district"}},
-    "15:30": {{"type": "activity", "title": "Real activity", "location": "Same district"}},
-    "19:00": {{"type": "dinner", "title": "Real restaurant", "location": "Same district"}}
+    "district": "Real {request.destination} neighborhood name",
+    "09:00": {{
+      "type": "breakfast",
+      "title": "Real cafe/restaurant name",
+      "location": "Same district",
+      "address": "Full street address with number and district"
+    }},
+    "11:00": {{
+      "type": "sightseeing", 
+      "title": "Real attraction/landmark name",
+      "location": "Same district",
+      "address": "Full street address or piazza name"
+    }},
+    "13:00": {{
+      "type": "lunch",
+      "title": "Real restaurant name", 
+      "location": "Same district",
+      "address": "Full street address with number"
+    }},
+    "15:30": {{
+      "type": "activity",
+      "title": "Real museum/activity/park name",
+      "location": "Same district", 
+      "address": "Full street address or location"
+    }},
+    "19:00": {{
+      "type": "dinner",
+      "title": "Real restaurant name",
+      "location": "Same district",
+      "address": "Full street address with number"
+    }}
   }}'''
 
     prompt += f"""
 }}
 
-Return only valid JSON."""
+IMPORTANT: 
+- Use your knowledge of real {request.destination} addresses
+- Include street numbers when possible
+- Restaurants should have real names and addresses
+- Group activities by actual walking-distance neighborhoods
+- Each address should be specific enough for map geocoding
+
+Return ONLY valid JSON with real addresses."""
 
     return prompt
 
 async def generate_itinerary_task(trip_id: int, request: ItineraryRequest, generation_id: str):
-    """Background task to generate an itinerary using Groq with robust parsing"""
+    """Background task to generate an itinerary using Groq with address information"""
     try:
         logger.info(f"Starting itinerary generation for trip {trip_id}, generation {generation_id}")
         logger.info(f"Date range: {request.start_date} to {request.end_date}")
@@ -795,24 +401,40 @@ async def generate_itinerary_task(trip_id: int, request: ItineraryRequest, gener
         
         logger.info(f"Calculated days_count: {days_count} (from {start_date.date()} to {end_date.date()})")
         
-        # Create geographically-aware prompt
-        prompt = create_geographic_prompt(request, start_date, end_date, days_count)
+        # Create detailed prompt with address requirements
+        prompt = create_geographic_prompt_with_addresses(request, start_date, end_date, days_count)
         
-        logger.info(f"Generated geographic prompt for {days_count} days")
+        logger.info(f"Generated address-enhanced prompt for {days_count} days")
         
         # Call Groq API
-        logger.info(f"Sending prompt to Groq for trip {trip_id}")
+        logger.info(f"Sending address-enhanced prompt to Groq for trip {trip_id}")
         llm_response = await generate_with_groq(prompt)
         
         # Parse response with ROBUST JSON handling
         if llm_response:
             logger.info(f"Received response from Groq for trip {trip_id}")
-            logger.info(f"Raw response preview: {llm_response[:200]}...")
+            logger.info(f"Raw response preview: {llm_response[:300]}...")
             
             # Use robust JSON parser
             itinerary_json = clean_and_parse_json(llm_response)
             
             if itinerary_json:
+                # Validate that addresses were included
+                has_addresses = False
+                for day_key, day_data in itinerary_json.items():
+                    if isinstance(day_data, dict):
+                        for time_key, activity in day_data.items():
+                            if isinstance(activity, dict) and 'address' in activity:
+                                has_addresses = True
+                                break
+                        if has_addresses:
+                            break
+                
+                if has_addresses:
+                    logger.info(f"✅ Successfully generated itinerary with addresses for trip {trip_id}")
+                else:
+                    logger.warning(f"⚠️ Generated itinerary lacks address information for trip {trip_id}")
+                
                 # Save to database
                 await save_itinerary_to_db(trip_id, itinerary_json, "completed", generation_id)
                 logger.info(f"Successfully generated and saved itinerary for trip {trip_id}")
@@ -822,37 +444,96 @@ async def generate_itinerary_task(trip_id: int, request: ItineraryRequest, gener
         else:
             logger.error(f"No response received from Groq for trip {trip_id}")
         
-        # Fallback: Create template itinerary with neighborhood logic
-        logger.info(f"Using enhanced fallback template itinerary for trip {trip_id}")
+        # Enhanced fallback: Create template itinerary with sample addresses
+        logger.info(f"Using enhanced fallback template itinerary with sample addresses for trip {trip_id}")
         
-        # Generic neighborhood names that work for any city
-        generic_neighborhoods = [
-            "City Center", "Historic District", "Old Town", 
-            "Cultural Quarter", "Arts District", "Waterfront Area",
-            "Downtown", "Business District", "Shopping District",
-            "Entertainment District", "Riverside", "Uptown"
-        ]
+        # City-specific fallback data - you can expand this
+        city_data = {
+            "rome": {
+                "neighborhoods": ["Trastevere", "Centro Storico", "Vatican", "Testaccio", "Monti"],
+                "sample_addresses": [
+                    "Via dei Cappuccini 15",
+                    "Piazza Navona 25", 
+                    "Via del Corso 100",
+                    "Via Nazionale 50",
+                    "Piazza di Spagna 10"
+                ]
+            },
+            "paris": {
+                "neighborhoods": ["Marais", "Saint-Germain", "Montmartre", "Latin Quarter", "Champs-Élysées"],
+                "sample_addresses": [
+                    "Rue de Rivoli 15",
+                    "Boulevard Saint-Germain 25",
+                    "Place du Tertre 5",
+                    "Rue Mouffetard 30",
+                    "Avenue des Champs-Élysées 100"
+                ]
+            },
+            "barcelona": {
+                "neighborhoods": ["Gràcia", "Gothic Quarter", "Eixample", "Born", "Barceloneta"],
+                "sample_addresses": [
+                    "Carrer Gran de Gràcia 15",
+                    "Plaça del Pi 5",
+                    "Passeig de Gràcia 100", 
+                    "Carrer Montcada 25",
+                    "Passeig Marítim 10"
+                ]
+            }
+        }
+        
+        # Get city-specific data or use generic
+        destination_key = request.destination.lower()
+        city_info = city_data.get(destination_key, {
+            "neighborhoods": ["City Center", "Historic District", "Arts Quarter", "Waterfront", "Old Town"],
+            "sample_addresses": ["Main Street 100", "Central Square 25", "Historic Avenue 50", "Riverside Road 75", "Culture Street 30"]
+        })
         
         itinerary = {}
         
         for i in range(days_count):
             current_date = start_date + timedelta(days=i)
             day_key = f"Day {i+1}"
-            neighborhood = generic_neighborhoods[i % len(generic_neighborhoods)]
+            neighborhood = city_info["neighborhoods"][i % len(city_info["neighborhoods"])]
+            base_address = city_info["sample_addresses"][i % len(city_info["sample_addresses"])]
             
             itinerary[day_key] = {
                 "date": current_date.strftime("%Y-%m-%d"),
                 "district": neighborhood,
-                "09:00": {"type": "breakfast", "title": f"Local breakfast spot in {neighborhood}", "location": neighborhood},
-                "11:00": {"type": "sightseeing", "title": f"Main attraction in {neighborhood}", "location": neighborhood},
-                "13:00": {"type": "lunch", "title": f"Restaurant in {neighborhood}", "location": neighborhood},
-                "15:30": {"type": "activity", "title": f"Secondary attraction in {neighborhood}", "location": neighborhood},
-                "19:00": {"type": "dinner", "title": f"Dinner restaurant in {neighborhood}", "location": neighborhood}
+                "09:00": {
+                    "type": "breakfast", 
+                    "title": f"Local breakfast café in {neighborhood}", 
+                    "location": neighborhood,
+                    "address": f"Breakfast Café, {base_address}, {neighborhood}"
+                },
+                "11:00": {
+                    "type": "sightseeing", 
+                    "title": f"Main attraction in {neighborhood}", 
+                    "location": neighborhood,
+                    "address": f"Historic Site, {base_address.replace('100', '25')}, {neighborhood}"
+                },
+                "13:00": {
+                    "type": "lunch", 
+                    "title": f"Traditional restaurant in {neighborhood}", 
+                    "location": neighborhood,
+                    "address": f"Local Restaurant, {base_address.replace('100', '50')}, {neighborhood}"
+                },
+                "15:30": {
+                    "type": "activity", 
+                    "title": f"Cultural activity in {neighborhood}", 
+                    "location": neighborhood,
+                    "address": f"Cultural Center, {base_address.replace('100', '75')}, {neighborhood}"
+                },
+                "19:00": {
+                    "type": "dinner", 
+                    "title": f"Dinner restaurant in {neighborhood}", 
+                    "location": neighborhood,
+                    "address": f"Evening Restaurant, {base_address.replace('100', '90')}, {neighborhood}"
+                }
             }
         
-        # Save fallback itinerary
+        # Save fallback itinerary with addresses
         await save_itinerary_to_db(trip_id, itinerary, "completed", generation_id)
-        logger.info(f"Generated and saved enhanced fallback itinerary for trip {trip_id}")
+        logger.info(f"Generated and saved enhanced fallback itinerary with addresses for trip {trip_id}")
         
     except Exception as e:
         logger.error(f"Error generating itinerary for trip {trip_id}: {str(e)}")
@@ -864,7 +545,7 @@ async def generate_itinerary_task(trip_id: int, request: ItineraryRequest, gener
 
 @app.post("/generate/{trip_id}", status_code=202)
 async def start_itinerary_generation(trip_id: str, request: ItineraryRequest, background_tasks: BackgroundTasks):
-    """Start generating a personalized travel itinerary"""
+    """Start generating a personalized travel itinerary with addresses"""
     
     try:
         trip_id_int = int(trip_id)
@@ -910,7 +591,7 @@ async def get_generation_status_endpoint(trip_id: str):
             elapsed = time.time() - creation_time.timestamp()
         else:
             elapsed = 0
-        eta = max(1, int(10 - elapsed))  # Groq usually takes 5-10 seconds
+        eta = max(1, int(15 - elapsed))  # More time for address generation
         return {"status": "processing", "message": "Itinerary generation in progress", "eta": eta}
     elif status == 'completed':
         return {"status": "completed", "message": "Itinerary generation completed"}
@@ -919,7 +600,7 @@ async def get_generation_status_endpoint(trip_id: str):
 
 @app.get("/itinerary/{trip_id}", response_model=ItineraryResponse)
 async def get_itinerary(trip_id: str):
-    """Get a generated itinerary"""
+    """Get a generated itinerary with addresses"""
     try:
         trip_id_int = int(trip_id)
     except ValueError:
@@ -988,3 +669,4 @@ async def clear_all_itineraries():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+

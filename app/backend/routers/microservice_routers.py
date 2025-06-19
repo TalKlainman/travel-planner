@@ -48,6 +48,283 @@ async def log_response(url, response):
             logger.info(f"RESPONSE TEXT: {response.text[:200]}")
 
 # Map Service Routes
+@map_router.post("/trip/visualize")
+async def visualize_trip_route(request: Request):
+    """Proxy to the map service trip visualization endpoint"""
+    try:
+        data = await request.json()
+        url = f"{MAP_SERVICE_URL}/trip/visualize"
+        await log_request("POST", url, json=data)
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url,
+                json=data,
+                timeout=15.0
+            )
+            
+            await log_response(url, response)
+            
+            return JSONResponse(
+                content=response.json(),
+                status_code=response.status_code
+            )
+    except Exception as e:
+        logger.error(f"Error calling map service trip visualization: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calling map service: {str(e)}")
+
+@map_router.post("/trip/optimize-route")
+async def optimize_trip_route(request: Request):
+    """Proxy to the map service route optimization endpoint"""
+    try:
+        data = await request.json()
+        url = f"{MAP_SERVICE_URL}/trip/optimize-route"
+        await log_request("POST", url, json=data)
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url,
+                json=data,
+                timeout=20.0  # Longer timeout for optimization
+            )
+            
+            await log_response(url, response)
+            
+            return JSONResponse(
+                content=response.json(),
+                status_code=response.status_code
+            )
+    except Exception as e:
+        logger.error(f"Error calling map service route optimization: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calling map service: {str(e)}")
+
+@map_router.get("/trip/{trip_id}/nearby-suggestions")
+async def get_trip_nearby_suggestions(trip_id: str, lat: float, lng: float, radius: int = 1000):
+    """Get nearby attraction suggestions for a trip"""
+    try:
+        url = f"{MAP_SERVICE_URL}/trip/{trip_id}/nearby-suggestions"
+        params = {"lat": lat, "lng": lng, "radius": radius}
+        await log_request("GET", url, params=params)
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                params=params,
+                timeout=15.0
+            )
+            
+            await log_response(url, response)
+            
+            return JSONResponse(
+                content=response.json(),
+                status_code=response.status_code
+            )
+    except Exception as e:
+        logger.error(f"Error calling map service nearby suggestions: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calling map service: {str(e)}")
+
+@map_router.post("/trip/{trip_id}/add-activity")
+async def add_activity_to_trip(trip_id: str, request: Request):
+    """Add a new activity to a trip"""
+    try:
+        data = await request.json()
+        url = f"{MAP_SERVICE_URL}/trip/{trip_id}/add-activity"
+        await log_request("POST", url, json=data)
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url,
+                json=data,
+                timeout=10.0
+            )
+            
+            await log_response(url, response)
+            
+            return JSONResponse(
+                content=response.json(),
+                status_code=response.status_code
+            )
+    except Exception as e:
+        logger.error(f"Error calling map service add activity: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calling map service: {str(e)}")
+
+# Add a new endpoint to integrate with your existing trip data
+@map_router.get("/trip/{trip_id}/visualization-data")
+async def get_trip_visualization_data(trip_id: str):
+    """
+    Get visualization data for a specific trip by fetching from your trip database
+    and processing it for map display
+    """
+    try:
+        # In a real implementation, you would:
+        # 1. Fetch the trip from your database
+        # 2. Get the itinerary data (possibly from the itinerary service)
+        # 3. Transform it into the format needed for visualization
+        
+        # For now, let's create a sample implementation that you can adapt:
+        
+        # Mock getting trip data from your database
+        # Replace this with actual database calls
+        trip_data = {
+            "id": trip_id,
+            "destination": "Barcelona, Spain",
+            "start_date": "2025-06-19",
+            "end_date": "2025-06-21"
+        }
+        
+        # Mock getting itinerary from itinerary service
+        # This should call your existing itinerary service
+        try:
+            itinerary_url = f"{ITINERARY_SERVICE_URL}/itinerary/{trip_id}"
+            async with httpx.AsyncClient() as client:
+                itinerary_response = await client.get(itinerary_url, timeout=10.0)
+                
+                if itinerary_response.status_code == 200:
+                    itinerary_data = itinerary_response.json()
+                    
+                    # Transform itinerary data into visualization format
+                    visualization_request = transform_itinerary_for_visualization(trip_id, itinerary_data)
+                    
+                    # Send to map service for visualization processing
+                    map_viz_url = f"{MAP_SERVICE_URL}/trip/visualize"
+                    viz_response = await client.post(
+                        map_viz_url,
+                        json=visualization_request,
+                        timeout=15.0
+                    )
+                    
+                    if viz_response.status_code == 200:
+                        return JSONResponse(content=viz_response.json())
+                    else:
+                        # Fallback to basic trip info
+                        return JSONResponse(content={
+                            "trip_id": trip_id,
+                            "message": "Itinerary found but visualization processing failed",
+                            "trip_data": trip_data
+                        })
+                else:
+                    # No itinerary yet, return empty visualization
+                    return JSONResponse(content={
+                        "trip_id": trip_id,
+                        "message": "No itinerary available for visualization",
+                        "trip_data": trip_data,
+                        "has_itinerary": False
+                    })
+                    
+        except Exception as itinerary_error:
+            logger.warning(f"Could not fetch itinerary for trip {trip_id}: {str(itinerary_error)}")
+            return JSONResponse(content={
+                "trip_id": trip_id,
+                "message": "Trip found but itinerary unavailable",
+                "trip_data": trip_data,
+                "has_itinerary": False
+            })
+            
+    except Exception as e:
+        logger.error(f"Error getting trip visualization data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting trip visualization data: {str(e)}")
+
+def transform_itinerary_for_visualization(trip_id: str, itinerary_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Transform your itinerary data format into the format expected by the map visualization service
+    You'll need to adapt this based on your actual itinerary data structure
+    """
+    try:
+        visualization_request = {
+            "trip_id": trip_id,
+            "itinerary": {}
+        }
+        
+        # Handle different possible itinerary formats
+        if isinstance(itinerary_data, dict):
+            if "itinerary" in itinerary_data:
+                raw_itinerary = itinerary_data["itinerary"]
+            else:
+                raw_itinerary = itinerary_data
+            
+            # Transform each day
+            for day_key, day_data in raw_itinerary.items():
+                if not day_key.startswith("Day"):
+                    continue
+                    
+                # Extract activities - handle different formats
+                activities = []
+                if isinstance(day_data, dict):
+                    if "activities" in day_data:
+                        raw_activities = day_data["activities"]
+                    else:
+                        # Handle time-based format like {"09:00": "Cafe Milans", "11:00": "Casa Batlló"}
+                        raw_activities = []
+                        for time_key, activity_value in day_data.items():
+                            if time_key == "date":
+                                continue
+                            raw_activities.append({
+                                "time": time_key,
+                                "name": activity_value if isinstance(activity_value, str) else activity_value.get("name", str(activity_value))
+                            })
+                elif isinstance(day_data, list):
+                    raw_activities = day_data
+                else:
+                    continue
+                
+                # Convert to standardized format
+                for i, activity in enumerate(raw_activities):
+                    if isinstance(activity, str):
+                        # Simple string format
+                        activity_obj = {
+                            "name": activity,
+                            "time": f"{9 + i * 2:02d}:00",  # Estimate times
+                            "type": "attraction",
+                            "lat": 41.3851 + (i * 0.01),  # Mock coordinates for Barcelona
+                            "lng": 2.1734 + (i * 0.01),
+                            "location": "Barcelona"
+                        }
+                    elif isinstance(activity, dict):
+                        # Dictionary format
+                        activity_obj = {
+                            "name": activity.get("name", activity.get("title", "Unknown Activity")),
+                            "time": activity.get("time", f"{9 + i * 2:02d}:00"),
+                            "type": activity.get("type", "attraction"),
+                            "lat": activity.get("lat", 41.3851 + (i * 0.01)),
+                            "lng": activity.get("lng", 2.1734 + (i * 0.01)),
+                            "location": activity.get("location", "Barcelona"),
+                            "description": activity.get("description")
+                        }
+                    else:
+                        continue
+                    
+                    activities.append(activity_obj)
+                
+                # Add day to visualization request
+                visualization_request["itinerary"][day_key] = {
+                    "date": day_data.get("date", "2025-06-19") if isinstance(day_data, dict) else "2025-06-19",
+                    "activities": activities
+                }
+        
+        return visualization_request
+        
+    except Exception as e:
+        logger.error(f"Error transforming itinerary for visualization: {str(e)}")
+        # Return a basic format if transformation fails
+        return {
+            "trip_id": trip_id,
+            "itinerary": {
+                "Day 1": {
+                    "date": "2025-06-19",
+                    "activities": [
+                        {
+                            "name": "Trip Activities",
+                            "time": "09:00",
+                            "type": "attraction", 
+                            "lat": 41.3851,
+                            "lng": 2.1734,
+                            "location": "Destination"
+                        }
+                    ]
+                }
+            }
+        }
+    
 @map_router.get("/search")
 async def search_locations(query: str, country: Optional[str] = None):
     """Proxy to the map service search endpoint"""
