@@ -70,7 +70,7 @@ export const mapService = {
       const response = await api.get(`/map/trip/${tripId}/visualization-data`);
       return response;
     } catch (error) {
-      console.error('Error fetching trip visualization:', error);
+      console.error("Error fetching trip visualization:", error);
       throw error;
     }
   },
@@ -83,12 +83,12 @@ export const mapService = {
     try {
       const payload = {
         trip_id: tripId,
-        itinerary: itineraryData
+        itinerary: itineraryData,
       };
       const response = await api.post("/map/trip/visualize", payload);
       return response;
     } catch (error) {
-      console.error('Error processing trip visualization:', error);
+      console.error("Error processing trip visualization:", error);
       throw error;
     }
   },
@@ -99,21 +99,21 @@ export const mapService = {
   optimizeRoute: async (activities, optimizationType = "shortest") => {
     try {
       const payload = {
-        activities: activities.map(activity => ({
+        activities: activities.map((activity) => ({
           name: activity.name,
           time: activity.time,
           type: activity.type || "attraction",
           lat: activity.lat,
           lng: activity.lng,
           location: activity.location,
-          description: activity.description
+          description: activity.description,
         })),
-        optimization_type: optimizationType
+        optimization_type: optimizationType,
       };
       const response = await api.post("/map/trip/optimize-route", payload);
       return response;
     } catch (error) {
-      console.error('Error optimizing route:', error);
+      console.error("Error optimizing route:", error);
       throw error;
     }
   },
@@ -128,7 +128,7 @@ export const mapService = {
       );
       return response;
     } catch (error) {
-      console.error('Error fetching nearby suggestions:', error);
+      console.error("Error fetching nearby suggestions:", error);
       throw error;
     }
   },
@@ -147,15 +147,18 @@ export const mapService = {
         location: activity.location,
         description: activity.description,
         day: day,
-        insert_at: insertAt
+        insert_at: insertAt,
       };
-      const response = await api.post(`/map/trip/${tripId}/add-activity`, payload);
+      const response = await api.post(
+        `/map/trip/${tripId}/add-activity`,
+        payload
+      );
       return response;
     } catch (error) {
-      console.error('Error adding activity to trip:', error);
+      console.error("Error adding activity to trip:", error);
       throw error;
     }
-  }
+  },
 };
 
 // Enhanced itinerary service with map integration
@@ -178,32 +181,34 @@ export const enhancedItineraryService = {
     try {
       // First get the itinerary
       const itineraryResponse = await api.get(`/itinerary/itinerary/${tripId}`);
-      
+
       if (itineraryResponse.status === 200 && itineraryResponse.data) {
         // Then get visualization data
         try {
-          const visualizationResponse = await mapService.getTripVisualization(tripId);
+          const visualizationResponse = await mapService.getTripVisualization(
+            tripId
+          );
           return {
             itinerary: itineraryResponse.data,
             visualization: visualizationResponse.data,
-            hasVisualization: true
+            hasVisualization: true,
           };
         } catch (vizError) {
-          console.warn('Visualization not available:', vizError);
+          console.warn("Visualization not available:", vizError);
           return {
             itinerary: itineraryResponse.data,
             visualization: null,
-            hasVisualization: false
+            hasVisualization: false,
           };
         }
       }
-      
+
       return itineraryResponse;
     } catch (error) {
-      console.error('Error fetching itinerary with visualization:', error);
+      console.error("Error fetching itinerary with visualization:", error);
       throw error;
     }
-  }
+  },
 };
 
 // Utility functions for working with map data
@@ -212,56 +217,71 @@ export const mapUtils = {
    * Transform itinerary data from your format to map visualization format
    */
   transformItineraryForMap: (itineraryData) => {
-    if (!itineraryData || typeof itineraryData !== 'object') {
+    if (!itineraryData || typeof itineraryData !== "object") {
       return {};
     }
 
     const transformed = {};
 
     Object.entries(itineraryData).forEach(([dayKey, dayData]) => {
-      if (!dayKey.includes('Day')) return;
+      if (!dayKey.includes("Day")) return;
 
       let activities = [];
 
       if (Array.isArray(dayData)) {
         // Array format
         activities = dayData.map((activity, index) => ({
-          name: typeof activity === 'string' ? activity : activity.name || activity.title,
+          name:
+            typeof activity === "string"
+              ? activity
+              : activity.name || activity.title,
           time: activity.time || `${9 + index * 2}:00`,
-          type: activity.type || 'attraction',
-          lat: activity.lat || (41.3851 + index * 0.01), // Default to Barcelona area
-          lng: activity.lng || (2.1734 + index * 0.01),
-          location: activity.location || 'Barcelona'
+          type: activity.type || "attraction",
+          lat: activity.lat || 41.3851 + index * 0.01, // Default to Barcelona area
+          lng: activity.lng || 2.1734 + index * 0.01,
+          location: activity.location || "Barcelona",
         }));
-      } else if (typeof dayData === 'object') {
+      } else if (typeof dayData === "object") {
         // Object format - could be time-based or activities array
         if (dayData.activities) {
           activities = dayData.activities.map((activity, index) => ({
-            name: typeof activity === 'string' ? activity : activity.name || activity.title,
+            name:
+              typeof activity === "string"
+                ? activity
+                : activity.name || activity.title,
             time: activity.time || `${9 + index * 2}:00`,
-            type: activity.type || 'attraction',
-            lat: activity.lat || (41.3851 + index * 0.01),
-            lng: activity.lng || (2.1734 + index * 0.01),
-            location: activity.location || 'Barcelona'
+            type: activity.type || "attraction",
+            lat: activity.lat || 41.3851 + index * 0.01,
+            lng: activity.lng || 2.1734 + index * 0.01,
+            location: activity.location || "Barcelona",
           }));
         } else {
           // Time-based format like {"09:00": "Activity Name"}
           activities = Object.entries(dayData)
-            .filter(([key]) => key !== 'date')
+            .filter(([key]) => key !== "date")
             .map(([time, activity]) => ({
-              name: typeof activity === 'string' ? activity : activity.name || activity.title,
+              name:
+                typeof activity === "string"
+                  ? activity
+                  : activity.name || activity.title,
               time: time,
-              type: (typeof activity === 'object' ? activity.type : null) || 'attraction',
-              lat: (typeof activity === 'object' ? activity.lat : null) || 41.3851,
-              lng: (typeof activity === 'object' ? activity.lng : null) || 2.1734,
-              location: (typeof activity === 'object' ? activity.location : null) || 'Barcelona'
+              type:
+                (typeof activity === "object" ? activity.type : null) ||
+                "attraction",
+              lat:
+                (typeof activity === "object" ? activity.lat : null) || 41.3851,
+              lng:
+                (typeof activity === "object" ? activity.lng : null) || 2.1734,
+              location:
+                (typeof activity === "object" ? activity.location : null) ||
+                "Barcelona",
             }));
         }
       }
 
       transformed[dayKey] = {
-        date: dayData.date || new Date().toISOString().split('T')[0],
-        activities: activities
+        date: dayData.date || new Date().toISOString().split("T")[0],
+        activities: activities,
       };
     });
 
@@ -276,8 +296,8 @@ export const mapUtils = {
       return null;
     }
 
-    const lats = activities.map(a => a.lat).filter(lat => lat != null);
-    const lngs = activities.map(a => a.lng).filter(lng => lng != null);
+    const lats = activities.map((a) => a.lat).filter((lat) => lat != null);
+    const lngs = activities.map((a) => a.lng).filter((lng) => lng != null);
 
     if (lats.length === 0 || lngs.length === 0) {
       return null;
@@ -287,7 +307,7 @@ export const mapUtils = {
       north: Math.max(...lats),
       south: Math.min(...lats),
       east: Math.max(...lngs),
-      west: Math.min(...lngs)
+      west: Math.min(...lngs),
     };
   },
 
@@ -295,11 +315,11 @@ export const mapUtils = {
    * Generate day colors for consistent visualization
    */
   getDayColors: () => [
-    { primary: '#3B82F6', light: '#DBEAFE', name: 'Blue' },
-    { primary: '#EF4444', light: '#FEE2E2', name: 'Red' }, 
-    { primary: '#10B981', light: '#D1FAE5', name: 'Green' },
-    { primary: '#F59E0B', light: '#FEF3C7', name: 'Amber' },
-    { primary: '#8B5CF6', light: '#EDE9FE', name: 'Purple' }
+    { primary: "#3B82F6", light: "#DBEAFE", name: "Blue" },
+    { primary: "#EF4444", light: "#FEE2E2", name: "Red" },
+    { primary: "#10B981", light: "#D1FAE5", name: "Green" },
+    { primary: "#F59E0B", light: "#FEF3C7", name: "Amber" },
+    { primary: "#8B5CF6", light: "#EDE9FE", name: "Purple" },
   ],
 
   /**
@@ -307,21 +327,21 @@ export const mapUtils = {
    */
   getActivityIcon: (type) => {
     const iconMap = {
-      'cafe': '☕',
-      'restaurant': '🍽️',
-      'landmark': '🏛️',
-      'shopping': '🛍️',
-      'park': '🌳',
-      'market': '🏪',
-      'walk': '🚶',
-      'beach': '🏖️',
-      'port': '⚓',
-      'museum': '🖼️',
-      'district': '🏙️',
-      'hotel': '🏨',
-      'attraction': '📍'
+      cafe: "☕",
+      restaurant: "🍽️",
+      landmark: "🏛️",
+      shopping: "🛍️",
+      park: "🌳",
+      market: "🏪",
+      walk: "🚶",
+      beach: "🏖️",
+      port: "⚓",
+      museum: "🖼️",
+      district: "🏙️",
+      hotel: "🏨",
+      attraction: "📍",
     };
-    return iconMap[type?.toLowerCase()] || '📍';
+    return iconMap[type?.toLowerCase()] || "📍";
   },
 
   /**
@@ -329,15 +349,15 @@ export const mapUtils = {
    */
   calculateDistance: (lat1, lng1, lat2, lng2) => {
     const R = 6371000; // Earth radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lng2 - lng1) * Math.PI / 180;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lng2 - lng1) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c; // Distance in meters
   },
@@ -360,7 +380,7 @@ export const mapUtils = {
     const walkingSpeed = 1.39; // m/s (5 km/h)
     const timeSeconds = distanceMeters / walkingSpeed;
     const timeMinutes = Math.round(timeSeconds / 60);
-    
+
     if (timeMinutes < 60) {
       return `${timeMinutes} min`;
     } else {
@@ -368,7 +388,7 @@ export const mapUtils = {
       const minutes = timeMinutes % 60;
       return `${hours}h ${minutes}m`;
     }
-  }
+  },
 };
 
 // React hooks for map functionality
@@ -387,8 +407,8 @@ export const useMapVisualization = (tripId) => {
       const response = await mapService.getTripVisualization(tripId);
       setVisualization(response.data);
     } catch (err) {
-      setError(err.message || 'Failed to load visualization');
-      console.error('Visualization loading error:', err);
+      setError(err.message || "Failed to load visualization");
+      console.error("Visualization loading error:", err);
     } finally {
       setLoading(false);
     }
@@ -402,7 +422,7 @@ export const useMapVisualization = (tripId) => {
     visualization,
     loading,
     error,
-    reload: loadVisualization
+    reload: loadVisualization,
   };
 };
 
@@ -410,25 +430,28 @@ export const useRouteOptimization = () => {
   const [optimizing, setOptimizing] = React.useState(false);
   const [optimizedRoute, setOptimizedRoute] = React.useState(null);
 
-  const optimizeRoute = React.useCallback(async (activities, type = 'shortest') => {
-    setOptimizing(true);
-    try {
-      const response = await mapService.optimizeRoute(activities, type);
-      setOptimizedRoute(response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Route optimization error:', error);
-      throw error;
-    } finally {
-      setOptimizing(false);
-    }
-  }, []);
+  const optimizeRoute = React.useCallback(
+    async (activities, type = "shortest") => {
+      setOptimizing(true);
+      try {
+        const response = await mapService.optimizeRoute(activities, type);
+        setOptimizedRoute(response.data);
+        return response.data;
+      } catch (error) {
+        console.error("Route optimization error:", error);
+        throw error;
+      } finally {
+        setOptimizing(false);
+      }
+    },
+    []
+  );
 
   return {
     optimizeRoute,
     optimizing,
     optimizedRoute,
-    clearOptimizedRoute: () => setOptimizedRoute(null)
+    clearOptimizedRoute: () => setOptimizedRoute(null),
   };
 };
 

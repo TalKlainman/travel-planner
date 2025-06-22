@@ -198,7 +198,8 @@ const TripDetail = () => {
   // Calculate trip duration
   const startDate = new Date(trip.start_date);
   const endDate = new Date(trip.end_date);
-  const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+  const durationDays =
+    Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
   // Calculate days until trip
   const today = new Date();
@@ -395,26 +396,6 @@ const TripDetail = () => {
                     <Typography variant="body1">
                       ${Number(trip.budget).toLocaleString()}
                     </Typography>
-                  </Box>
-
-                  {/* Budget progress placeholder */}
-                  <Box sx={{ mt: 1 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mb: 0.5,
-                      }}
-                    >
-                      <Typography variant="caption" color="text.secondary">
-                        $0 spent
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={0}
-                      sx={{ height: 6, borderRadius: 1 }}
-                    />
                   </Box>
                 </Box>
               </Grid>

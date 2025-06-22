@@ -160,7 +160,7 @@ const TripCard = ({ trip, onDelete }) => {
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Clock size={16} color="#666" style={{ marginRight: 8 }} />
               <Typography variant="body2" color="text.secondary">
-                {trip.duration ? `${trip.duration} days` : `${Math.ceil((new Date(trip.end_date) - new Date(trip.start_date)) / (1000 * 60 * 60 * 24))} days`}
+                {trip.duration ? `${trip.duration} days` : `${Math.ceil((new Date(trip.end_date) - new Date(trip.start_date)) / (1000 * 60 * 60 * 24)) + 1} days`}
               </Typography>
             </Box>
 
