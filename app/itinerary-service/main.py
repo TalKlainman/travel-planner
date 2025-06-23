@@ -24,7 +24,7 @@ app = FastAPI(
 )
 
 # Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@postgres-service:5432/traveldb")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Configuration for Groq
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")

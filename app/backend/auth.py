@@ -5,12 +5,12 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-
 from database import get_db
 from models import DBUser, User
+import os
 
 # Security constants
-SECRET_KEY = "YOUR_SECRET_KEY"  # In production, use a secure random key stored in environment variables
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

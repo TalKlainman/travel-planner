@@ -375,7 +375,7 @@ const ItineraryDisplay = ({ tripId }) => {
     };
   }, [tripId]);
 
-  // Loading state with skeleton
+  // Loading state with skeleton - UPDATED WITH CONSISTENT FONT
   if (loading && !status) {
     return (
       <div className="max-w-7xl mx-auto p-6">
@@ -383,6 +383,29 @@ const ItineraryDisplay = ({ tripId }) => {
           {/* Header skeleton */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
             <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+          </div>
+
+          {/* Loading text that matches Map component */}
+          <div
+            className="p-8 text-center border-b border-gray-200"
+            style={{
+              fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+              lineHeight: 1.6,
+              letterSpacing: "0.0075em",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: "700",
+                fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                lineHeight: 1.6,
+                letterSpacing: "0.0075em",
+                color: "#374151",
+              }}
+            >
+              Loading itinerary...
+            </div>
           </div>
 
           {/* Table skeleton */}
@@ -441,15 +464,36 @@ const ItineraryDisplay = ({ tripId }) => {
               <Loader2 className="w-6 h-6 text-blue-400 animate-spin absolute -top-1 -right-1" />
             </div>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <h3
+            className="text-xl font-semibold text-gray-900 mb-2"
+            style={{
+              fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+              lineHeight: 1.6,
+              letterSpacing: "0.0075em",
+            }}
+          >
             Creating Your Perfect Itinerary
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p
+            className="text-gray-600 mb-4"
+            style={{
+              fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+              lineHeight: 1.6,
+              letterSpacing: "0.0075em",
+            }}
+          >
             {status.message ||
               "Our AI is crafting a personalized travel experience just for you..."}
           </p>
           {status.eta && (
-            <p className="text-sm text-blue-600">
+            <p
+              className="text-sm text-blue-600"
+              style={{
+                fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                lineHeight: 1.6,
+                letterSpacing: "0.0075em",
+              }}
+            >
               Estimated time remaining: {status.eta} seconds
             </p>
           )}

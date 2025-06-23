@@ -23,9 +23,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres-service:5432/traveldb
+      - DATABASE_URL=${DATABASE_URL}
       - ITINERARY_SERVICE_URL=http://itinerary-service:8001
       - MAP_SERVICE_URL=http://map-service:8002
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    env_file:  
+    - .env
     depends_on:
       postgres-service:
         condition: service_healthy
@@ -45,8 +48,10 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres-service:5432/traveldb
-      - GROQ_API_KEY=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 
+      - DATABASE_URL=${DATABASE_URL}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    env_file: 
+    - .env
     depends_on:
       postgres-service:
         condition: service_healthy
@@ -61,8 +66,8 @@ services:
       context: ./app/map-service
     ports:
       - "8002:8002"
-    environment:
-      - OSM_API_KEY=your_osm_api_key
+    env_file: 
+    - .env
     networks:
       - travel-planner-network
     container_name: travel-planner-map-service
@@ -75,8 +80,10 @@ services:
       - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=traveldb
+    env_file: 
+    - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
