@@ -6,6 +6,10 @@ A microservices-based travel planning application that helps users create and ma
 
 ![System Architecture](assets/system-architecture.png)
 
+## Demo
+
+[Watch the demo video](https://youtu.be/0Sz5CaqTw7M)
+
 ## Architecture
 
 The application is built using a microservices architecture with the following components:
