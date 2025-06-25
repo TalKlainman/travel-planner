@@ -4,6 +4,28 @@ import React, { useState, useEffect } from "react";
 const globalEnrichedCache = new Map();
 const globalProcessedTrips = new Set();
 
+// Add these exported functions
+export const clearMapCache = (tripId, destination) => {
+  const cacheKey = `${tripId}_${destination}`;
+  globalEnrichedCache.delete(cacheKey);
+  globalProcessedTrips.delete(cacheKey);
+  console.log(`🗑️ Cleared map cache for trip ${tripId}`);
+};
+
+export const clearMapCacheByTripId = (tripId) => {
+  for (const [key] of globalEnrichedCache.entries()) {
+    if (key.startsWith(`${tripId}_`)) {
+      globalEnrichedCache.delete(key);
+    }
+  }
+  for (const key of globalProcessedTrips) {
+    if (key.startsWith(`${tripId}_`)) {
+      globalProcessedTrips.delete(key);
+    }
+  }
+  console.log(`🗑️ Cleared all map cache for trip ${tripId}`);
+};
+
 // Helper function to calculate distance from city center
 const calculateDistanceFromCenter = (lat1, lng1, lat2, lng2) => {
   const R = 6371000; // Earth radius in meters

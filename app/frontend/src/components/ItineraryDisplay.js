@@ -871,3 +871,4 @@ const ItineraryDisplay = ({ tripId }) => {
 };
 
 export default ItineraryDisplay;
+
