@@ -12,6 +12,10 @@ The application is built using a microservices architecture with the following c
 - **Map Service**: Itinerary-based attractions and routes using OpenStreetMap
 - **Database**: PostgreSQL for data storage
 
+## System Architecture Diagram
+
+![System Architecture](assets/system-architecture.png)
+
 ## Features
 
 - User authentication (login/registration)
@@ -21,6 +25,19 @@ The application is built using a microservices architecture with the following c
 - Interactive map view of itinerary attractions and travel routes
 
 ## Getting Started
+
+## Environment Setup
+
+Before running the application, you need to create a `.env` file in the root directory.
+
+Then, fill in your actual values for each variable:
+
+```
+POSTGRES_PASSWORD=your_postgres_password
+DATABASE_URL=postgresql://postgres:postgres@postgres-service:5432/traveldb
+GROQ_API_KEY=your_groq_api_key
+JWT_SECRET_KEY=your_jwt_secret_key
+```
 
 ### Prerequisites
 
@@ -104,3 +121,11 @@ travel-planner/
 - **Map**: OpenStreetMap APIs
 - **Containerization**: Docker, Docker Compose
 - **Testing**: httpx, pytest
+
+```
+
+```
+
+```
+
+```
