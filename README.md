@@ -2,6 +2,10 @@
 
 A microservices-based travel planning application that helps users create and manage trip itineraries with AI-generated recommendations based on personal preferences.
 
+## System Architecture Diagram
+
+![System Architecture](assets/system-architecture.png)
+
 ## Architecture
 
 The application is built using a microservices architecture with the following components:
@@ -11,10 +15,6 @@ The application is built using a microservices architecture with the following c
 - **Itinerary Service**: AI-powered trip itinerary generator using Groq (LLaMA 3)
 - **Map Service**: Itinerary-based attractions and routes using OpenStreetMap
 - **Database**: PostgreSQL for data storage
-
-## System Architecture Diagram
-
-![System Architecture](assets/system-architecture.png)
 
 ## Features
 
