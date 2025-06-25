@@ -102,15 +102,17 @@ Provides itinerary-based map visualization using OpenStreetMap:
 
 ## Project Structure
 
+```text
 travel-planner/
-├── app/
-│ ├── backend/ # Core FastAPI application
-│ ├── frontend/ # React frontend
-│ ├── itinerary-service/ # Itinerary generation microservice
-│ └── map-service/ # Map visualization microservice
-├── integration_test.py # Integration test script
-├── docker-compose.yml # Docker Compose configuration
-└── README.md # Project documentation
+  app/
+    backend/                # Core FastAPI application
+    frontend/               # React frontend
+    itinerary-service/      # Itinerary generation microservice
+    map-service/            # Map visualization microservice
+  integration_test.py       # Integration test script
+  docker-compose.yml        # Docker Compose configuration
+  README.md                 # Project documentation
+```
 
 ## Technologies Used
 
