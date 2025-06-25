@@ -1,8 +1,5 @@
-# integration_test.py
 import httpx
-import json
 import asyncio
-import time
 
 # Base URL for your services
 BACKEND_URL = "http://localhost:8000/api"

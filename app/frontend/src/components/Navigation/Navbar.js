@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AppBar,
@@ -33,7 +33,7 @@ const Navbar = () => {
           sx={{
             height: 64,
             justifyContent: "space-between",
-            px: { xs: 2, md: 4 }, // add padding manually
+            px: { xs: 2, md: 4 },
           }}
         >
           {/* Logo */}

@@ -1,9 +1,8 @@
-# app/backend/routers/microservice_routers.py
-from fastapi import APIRouter, HTTPException, Depends, Request, Path, Query, Body
+from fastapi import APIRouter, HTTPException, Request, Path, Body
 from fastapi.responses import JSONResponse
 import httpx
 import os
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any, Dict
 import json
 import logging
 
@@ -26,7 +25,6 @@ itinerary_router = APIRouter(
 MAP_SERVICE_URL = os.getenv("MAP_SERVICE_URL", "http://map-service:8002")
 ITINERARY_SERVICE_URL = os.getenv("ITINERARY_SERVICE_URL", "http://itinerary-service:8001")
 
-# Enable this for verbose debugging
 DEBUG = True
 
 async def log_request(method, url, **kwargs):
@@ -85,7 +83,7 @@ async def optimize_trip_route(request: Request):
             response = await client.post(
                 url,
                 json=data,
-                timeout=20.0  # Longer timeout for optimization
+                timeout=20.0 
             )
             
             await log_response(url, response)
@@ -148,7 +146,6 @@ async def add_activity_to_trip(trip_id: str, request: Request):
         logger.error(f"Error calling map service add activity: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error calling map service: {str(e)}")
 
-# Add a new endpoint to integrate with your existing trip data
 @map_router.get("/trip/{trip_id}/visualization-data")
 async def get_trip_visualization_data(trip_id: str):
     """
@@ -156,24 +153,12 @@ async def get_trip_visualization_data(trip_id: str):
     and processing it for map display
     """
     try:
-        # In a real implementation, you would:
-        # 1. Fetch the trip from your database
-        # 2. Get the itinerary data (possibly from the itinerary service)
-        # 3. Transform it into the format needed for visualization
-        
-        # For now, let's create a sample implementation that you can adapt:
-        
-        # Mock getting trip data from your database
-        # Replace this with actual database calls
         trip_data = {
             "id": trip_id,
             "destination": "Barcelona, Spain",
             "start_date": "2025-06-19",
             "end_date": "2025-06-21"
         }
-        
-        # Mock getting itinerary from itinerary service
-        # This should call your existing itinerary service
         try:
             itinerary_url = f"{ITINERARY_SERVICE_URL}/itinerary/{trip_id}"
             async with httpx.AsyncClient() as client:
@@ -407,7 +392,6 @@ async def get_attractions(destination: str, radius: Optional[int] = 5000):
         logger.error(f"Error calling map service: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error calling map service: {str(e)}")
 
-# Itinerary Service Routes - Original route (may remove or modify this)
 @itinerary_router.post("/generate")
 async def generate_itinerary(request: Request):
     """Proxy to the itinerary service generate endpoint (legacy)"""
@@ -433,7 +417,6 @@ async def generate_itinerary(request: Request):
         logger.error(f"Error calling itinerary service: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error calling itinerary service: {str(e)}")
 
-# New Ollama-integrated itinerary routes
 @itinerary_router.post("/generate/{trip_id}")
 async def generate_trip_itinerary(
     trip_id: str = Path(..., description="Trip ID to generate itinerary for"),
@@ -448,12 +431,11 @@ async def generate_trip_itinerary(
             response = await client.post(
                 url,
                 json=request_data,
-                timeout=30.0  # Longer timeout for LLM-based generation
+                timeout=30.0  
             )
             
             await log_response(url, response)
             
-            # Return the response as is
             return JSONResponse(
                 content=response.json() if response.status_code != 204 else {},
                 status_code=response.status_code
@@ -491,7 +473,6 @@ async def check_itinerary_status(
 async def get_trip_itinerary(trip_id: str):
     """Get the generated itinerary for a trip"""
     try:
-        # Try multiple possible endpoints in the itinerary service
         endpoints = [
             f"/itinerary/{trip_id}",  # The standard endpoint as per the service
             f"/{trip_id}",            # The root endpoint alias
@@ -544,8 +525,6 @@ async def get_trip_itinerary(trip_id: str):
     except Exception as e:
         logger.error(f"Unexpected error retrieving itinerary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error retrieving itinerary: {str(e)}")
-    
-    # Add this to your microservice_routers.py file:
 
 @itinerary_router.get("/itinerary/itinerary/{trip_id}")
 async def get_trip_itinerary_alternate(trip_id: str):

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
@@ -12,9 +12,6 @@ import {
   Landmark,
   Loader2,
   Sparkles,
-  Activity,
-  Sun,
-  Moon,
 } from "lucide-react";
 
 // Helper function to get icon based on activity type
@@ -60,18 +57,6 @@ const cleanLocationName = (location) => {
   if (!location) return "";
   // Split by comma and take only the first part
   return location.split(",")[0].trim();
-};
-
-// Get column background color based on time slot
-const getColumnBackground = (timeSlot) => {
-  const backgrounds = {
-    breakfast: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)", // Warm yellow
-    morning: "linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)", // Light yellow
-    lunch: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", // Light green
-    afternoon: "linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)", // Light purple
-    dinner: "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)", // Light indigo
-  };
-  return backgrounds[timeSlot] || "white";
 };
 
 // Get day background color matching the map colors
@@ -342,7 +327,6 @@ const ItineraryDisplay = ({ tripId }) => {
       setLoading(true);
       setError(null);
 
-      // Request itinerary generation - uses trip data from your database
       const genResponse = await fetch(`/api/itinerary/generate/${tripId}`, {
         method: "POST",
         headers: {
@@ -375,7 +359,6 @@ const ItineraryDisplay = ({ tripId }) => {
     };
   }, [tripId]);
 
-  // Loading state with skeleton - UPDATED WITH CONSISTENT FONT
   if (loading && !status) {
     return (
       <div className="max-w-7xl mx-auto p-6">
@@ -384,8 +367,6 @@ const ItineraryDisplay = ({ tripId }) => {
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
             <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
           </div>
-
-          {/* Loading text that matches Map component */}
           <div
             className="p-8 text-center border-b border-gray-200"
             style={{
@@ -871,4 +852,3 @@ const ItineraryDisplay = ({ tripId }) => {
 };
 
 export default ItineraryDisplay;
-

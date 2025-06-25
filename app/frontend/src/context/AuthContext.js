@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect } from "react";
 import api from "../services/api";
 
 // Create the context
@@ -10,7 +10,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [authError, setAuthError] = useState(null);
 
-  // Load user from token on startup
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem("token");
@@ -38,7 +37,6 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // Login function
   const login = async (email, password) => {
     setLoading(true);
     setAuthError(null);
@@ -86,7 +84,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register function
   const register = async (email, password) => {
     setLoading(true);
     setAuthError(null);
@@ -112,7 +109,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
   const logout = () => {
     // Remove token from localStorage
     localStorage.removeItem("token");

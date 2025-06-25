@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date
 import logging
 
 import models
@@ -43,7 +42,6 @@ async def create_trip(
                 detail="End date must be after start date"
             )
         
-        # Create trip with default itinerary - SAVE FIRST
         trip_data = trip.dict()
         db_trip = models.DBTrip(
             **trip_data, 
@@ -62,10 +60,9 @@ async def create_trip(
                 models.DBPreference.user_id == current_user.id
             ).all()
             
-            # Add background task with CORRECT parameters
             background_tasks.add_task(
                 generate_and_save_itinerary,
-                str(db_trip.id),  # trip_id as string (FIRST parameter)
+                str(db_trip.id),  
                 db_trip.destination,
                 str(db_trip.start_date),
                 str(db_trip.end_date),
@@ -79,7 +76,6 @@ async def create_trip(
             
         except Exception as bg_error:
             logger.error(f"Failed to schedule background task: {str(bg_error)}")
-            # Don't fail trip creation, just log the error
         
         return db_trip
         
@@ -262,7 +258,6 @@ def delete_trip(
             detail="Error deleting trip"
         )
 
-# Add endpoint to manually trigger itinerary generation
 @router.post("/{trip_id}/generate-itinerary", response_model=models.Trip)
 async def generate_trip_itinerary(
     trip_id: int,
@@ -289,9 +284,9 @@ async def generate_trip_itinerary(
         ).all()
         
         try:
-            # Call itinerary service with CORRECT parameters
+            # Call itinerary service
             status_code, itinerary = await itinerary_service.generate_itinerary(
-                str(trip_id),  # trip_id as string
+                str(trip_id),  
                 trip.destination,
                 str(trip.start_date),
                 str(trip.end_date),
@@ -325,7 +320,7 @@ async def generate_trip_itinerary(
         raise HTTPException(status_code=500, detail="Error generating itinerary")
 
 async def generate_and_save_itinerary(
-    trip_id: str,  # Now correctly accepts trip_id as first parameter
+    trip_id: str, 
     destination: str,
     start_date: str,
     end_date: str,
@@ -349,10 +344,10 @@ async def generate_and_save_itinerary(
         db_trip.itinerary = {"status": "generating", "activities": []}
         db.commit()
         
-        # Call service with CORRECT parameters and handle response
+        # Call service and handle response
         try:
             status_code, itinerary = await itinerary_service.generate_itinerary(
-                trip_id,  # trip_id as string (correct)
+                trip_id, 
                 destination,
                 start_date,
                 end_date,

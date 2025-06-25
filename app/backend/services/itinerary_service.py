@@ -45,7 +45,6 @@ class ItineraryService:
     async def get_itinerary(self, trip_id: str) -> Tuple[int, Dict[str, Any]]:
         """Get a generated itinerary"""
         async with httpx.AsyncClient() as client:
-            # First try the itinerary/itinerary endpoint (to match frontend request pattern)
             try:
                 response = await client.get(
                     f"{self.base_url}/itinerary/itinerary/{trip_id}",
@@ -61,10 +60,8 @@ class ItineraryService:
                         }
                     return response.status_code, response.json() if response.status_code == 200 else {}
             except Exception:
-                # If that fails, try the standard endpoint
                 pass
                 
-            # Try the standard itinerary endpoint
             try:
                 response = await client.get(
                     f"{self.base_url}/itinerary/{trip_id}",
@@ -80,10 +77,8 @@ class ItineraryService:
                     
                 return response.status_code, response.json() if response.status_code == 200 else {}
             except Exception:
-                # If that fails, try the root endpoint
                 pass
             
-            # Try the root endpoint as a last resort
             response = await client.get(
                 f"{self.base_url}/{trip_id}",
                 timeout=10.0

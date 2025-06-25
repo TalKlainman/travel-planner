@@ -29,25 +29,25 @@ def wait_for_postgres(max_retries=30, delay=2):
                 dbname=POSTGRES_DB
             )
             conn.close()
-            print("✅ PostgreSQL is ready!")
+            print(" PostgreSQL is ready!")
             return True
             
         except OperationalError as e:
-            print(f"⏳ Attempt {attempt + 1}/{max_retries}: PostgreSQL not ready yet...")
+            print(f" Attempt {attempt + 1}/{max_retries}: PostgreSQL not ready yet...")
             print(f"   Error: {str(e).strip()}")
             
             if attempt < max_retries - 1:  # Don't sleep on the last attempt
                 print(f"   Waiting {delay} seconds before retry...")
                 time.sleep(delay)
             else:
-                print("❌ PostgreSQL failed to start within the expected time")
+                print(" PostgreSQL failed to start within the expected time")
                 raise Exception(f"PostgreSQL failed to start after {max_retries * delay} seconds")
     
     return False
 
 def create_tables_manually():
     """Create tables in PostgreSQL with explicit schema."""
-    print("\n🔧 Creating database tables...")
+    print("\n Creating database tables...")
     
     # Wait for PostgreSQL to be ready first
     wait_for_postgres()
@@ -70,11 +70,11 @@ def create_tables_manually():
     tables_exist = cursor.fetchone()
     
     if tables_exist:
-        print("✅ Tables already exist, skipping table creation")
+        print(" Tables already exist, skipping table creation")
         conn.close()
         return
     
-    print("🔧 Creating tables for the first time...")
+    print(" Creating tables for the first time...")
     
     # Create users table
     try:
@@ -86,9 +86,9 @@ def create_tables_manually():
             is_active BOOLEAN NOT NULL
         );
         """)
-        print("✅ Created table: users")
+        print(" Created table: users")
     except Exception as e:
-        print(f"❌ Error creating users table: {str(e)}")
+        print(f" Error creating users table: {str(e)}")
     
     # Create locations table
     try:
@@ -104,9 +104,9 @@ def create_tables_manually():
             image_url TEXT
         );
         """)
-        print("✅ Created table: locations")
+        print(" Created table: locations")
     except Exception as e:
-        print(f"❌ Error creating locations table: {str(e)}")
+        print(f" Error creating locations table: {str(e)}")
     
     # Create trips table
     try:
@@ -123,9 +123,9 @@ def create_tables_manually():
             owner_id INTEGER NOT NULL
         );
         """)
-        print("✅ Created table: trips")
+        print(" Created table: trips")
     except Exception as e:
-        print(f"❌ Error creating trips table: {str(e)}")
+        print(f" Error creating trips table: {str(e)}")
     
     # Create preferences table
     try:
@@ -138,17 +138,17 @@ def create_tables_manually():
             user_id INTEGER NOT NULL
         );
         """)
-        print("✅ Created table: preferences")
+        print(" Created table: preferences")
     except Exception as e:
-        print(f"❌ Error creating preferences table: {str(e)}")
+        print(f" Error creating preferences table: {str(e)}")
     
     conn.commit()
     conn.close()
-    print("🎉 Database schema created successfully!")
+    print(" Database schema created successfully!")
 
 def insert_data_manually():
     """Insert data from SQLite to PostgreSQL manually."""
-    print("\n📊 Starting data migration...")
+    print("\n Starting data migration...")
     
     # Connect to PostgreSQL first to check existing data
     wait_for_postgres()
@@ -176,34 +176,34 @@ def insert_data_manually():
         location_count = pg_cursor.fetchone()[0]
         
         if trip_count > 0 or user_count > 0 or pref_count > 0 or location_count > 0:
-            print(f"✅ Database already contains data:")
+            print(f" Database already contains data:")
             print(f"   - Users: {user_count}")
             print(f"   - Trips: {trip_count}")
             print(f"   - Preferences: {pref_count}")
             print(f"   - Locations: {location_count}")
-            print("🔄 Skipping data migration to prevent duplicates")
+            print(" Skipping data migration to prevent duplicates")
             pg_conn.close()
             return
             
     except Exception as e:
-        print(f"⚠️  Error checking existing data: {str(e)}")
+        print(f"  Error checking existing data: {str(e)}")
         # Continue with migration if we can't check existing data
     
     # Check if SQLite database exists
     if not os.path.exists(SQLITE_DB_PATH):
-        print(f"⚠️  SQLite database not found at {SQLITE_DB_PATH}")
-        print("🔄 Skipping data migration - starting with empty database")
+        print(f"  SQLite database not found at {SQLITE_DB_PATH}")
+        print(" Skipping data migration - starting with empty database")
         pg_conn.close()
         return
     
-    print("🔄 Database is empty, proceeding with migration...")
+    print(" Database is empty, proceeding with migration...")
     
     # Connect to SQLite
     sqlite_conn = sqlite3.connect(SQLITE_DB_PATH)
     sqlite_cursor = sqlite_conn.cursor()
     
     # 1. Migrate users
-    print("👤 Migrating users...")
+    print(" Migrating users...")
     try:
         sqlite_cursor.execute("SELECT email, hashed_password, is_active FROM users;")
         users = sqlite_cursor.fetchall()
@@ -217,7 +217,7 @@ def insert_data_manually():
                 existing_user = pg_cursor.fetchone()
                 
                 if existing_user:
-                    print(f"   ⚠️  User {email} already exists, skipping...")
+                    print(f"     User {email} already exists, skipping...")
                     continue
                 
                 pg_cursor.execute("""
@@ -227,20 +227,20 @@ def insert_data_manually():
                 """, (email, hashed_password, True if is_active == 1 else False))
                 
                 user_id = pg_cursor.fetchone()[0]
-                print(f"   ✅ Migrated user: {email}")
+                print(f"    Migrated user: {email}")
                 migrated_user_count += 1
                 pg_conn.commit()
             except Exception as e:
                 pg_conn.rollback()
-                print(f"   ❌ Error migrating user {email}: {str(e)}")
+                print(f"    Error migrating user {email}: {str(e)}")
         
-        print(f"👤 Users migrated: {migrated_user_count}/{len(users)}")
+        print(f" Users migrated: {migrated_user_count}/{len(users)}")
         
     except Exception as e:
-        print(f"⚠️  Error accessing users table: {str(e)}")
+        print(f"  Error accessing users table: {str(e)}")
     
     # 2. Migrate locations
-    print("📍 Migrating locations...")
+    print(" Migrating locations...")
     try:
         sqlite_cursor.execute("SELECT name, country, description, lat, lng, popular, image_url FROM locations;")
         locations = sqlite_cursor.fetchall()
@@ -254,7 +254,7 @@ def insert_data_manually():
                 existing_location = pg_cursor.fetchone()
                 
                 if existing_location:
-                    print(f"   ⚠️  Location {name}, {country} already exists, skipping...")
+                    print(f"     Location {name}, {country} already exists, skipping...")
                     continue
                 
                 pg_cursor.execute("""
@@ -264,20 +264,20 @@ def insert_data_manually():
                 """, (name, country, description, lat, lng, True if popular == 1 else False, image_url))
                 
                 location_id = pg_cursor.fetchone()[0]
-                print(f"   ✅ Migrated location: {name}")
+                print(f"    Migrated location: {name}")
                 migrated_location_count += 1
                 pg_conn.commit()
             except Exception as e:
                 pg_conn.rollback()
-                print(f"   ❌ Error migrating location {name}: {str(e)}")
+                print(f"    Error migrating location {name}: {str(e)}")
         
-        print(f"📍 Locations migrated: {migrated_location_count}/{len(locations)}")
+        print(f" Locations migrated: {migrated_location_count}/{len(locations)}")
         
     except Exception as e:
-        print(f"⚠️  Error accessing locations table: {str(e)}")
+        print(f"  Error accessing locations table: {str(e)}")
     
     # 3. Migrate trips
-    print("🧳 Migrating trips...")
+    print(" Migrating trips...")
     try:
         sqlite_cursor.execute("SELECT title, destination, start_date, end_date, budget, description, itinerary, owner_id FROM trips;")
         trips = sqlite_cursor.fetchall()
@@ -294,7 +294,7 @@ def insert_data_manually():
                 existing_trip = pg_cursor.fetchone()
                 
                 if existing_trip:
-                    print(f"   ⚠️  Trip {title} to {destination} already exists, skipping...")
+                    print(f"     Trip {title} to {destination} already exists, skipping...")
                     continue
                 
                 # Handle itinerary JSON
@@ -317,20 +317,20 @@ def insert_data_manually():
                 """, (title, destination, start_date, end_date, budget, description, itinerary, 1))
                 
                 trip_id = pg_cursor.fetchone()[0]
-                print(f"   ✅ Migrated trip: {title}")
+                print(f"    Migrated trip: {title}")
                 migrated_trip_count += 1
                 pg_conn.commit()
             except Exception as e:
                 pg_conn.rollback()
-                print(f"   ❌ Error migrating trip {title}: {str(e)}")
+                print(f"    Error migrating trip {title}: {str(e)}")
         
         print(f"🧳 Trips migrated: {migrated_trip_count}/{len(trips)}")
         
     except Exception as e:
-        print(f"⚠️  Error accessing trips table: {str(e)}")
+        print(f"  Error accessing trips table: {str(e)}")
     
     # 4. Migrate preferences
-    print("⚙️  Migrating preferences...")
+    print("  Migrating preferences...")
     try:
         sqlite_cursor.execute("SELECT category, value, weight, user_id FROM preferences;")
         preferences = sqlite_cursor.fetchall()
@@ -347,7 +347,7 @@ def insert_data_manually():
                 existing_pref = pg_cursor.fetchone()
                 
                 if existing_pref:
-                    print(f"   ⚠️  Preference {category}: {value} already exists, skipping...")
+                    print(f"     Preference {category}: {value} already exists, skipping...")
                     continue
                 
                 pg_cursor.execute("""
@@ -357,26 +357,26 @@ def insert_data_manually():
                 """, (category, value, weight, 1))
                 
                 pref_id = pg_cursor.fetchone()[0]
-                print(f"   ✅ Migrated preference: {category}: {value}")
+                print(f"    Migrated preference: {category}: {value}")
                 migrated_pref_count += 1
                 pg_conn.commit()
             except Exception as e:
                 pg_conn.rollback()
-                print(f"   ❌ Error migrating preference {category}: {value}: {str(e)}")
+                print(f"    Error migrating preference {category}: {value}: {str(e)}")
         
-        print(f"⚙️  Preferences migrated: {migrated_pref_count}/{len(preferences)}")
+        print(f"  Preferences migrated: {migrated_pref_count}/{len(preferences)}")
         
     except Exception as e:
-        print(f"⚠️  Error accessing preferences table: {str(e)}")
+        print(f"  Error accessing preferences table: {str(e)}")
     
     # Close connections
     sqlite_conn.close()
     pg_conn.close()
-    print("🎉 Data migration completed!")
+    print(" Data migration completed!")
 
 def main():
     """Main migration function."""
-    print("🚀 Starting migration from SQLite to PostgreSQL...")
+    print(" Starting migration from SQLite to PostgreSQL...")
     print("=" * 50)
     
     try:
@@ -387,10 +387,10 @@ def main():
         insert_data_manually()
         
         print("\n" + "=" * 50)
-        print("✅ Migration completed successfully!")
+        print(" Migration completed successfully!")
         
     except Exception as e:
-        print(f"\n❌ Migration failed: {str(e)}")
+        print(f"\n Migration failed: {str(e)}")
         print("Please check the error messages above and try again.")
         exit(1)
 

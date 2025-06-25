@@ -1,11 +1,10 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, Date, Text, JSON
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel, Field, validator
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any
 from datetime import date
 from database import Base
 
-# SQLAlchemy Models (for database)
 class DBUser(Base):
     __tablename__ = "users"
     

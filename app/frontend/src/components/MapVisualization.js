@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
 
-// SOLUTION 1: Move cache outside component to persist across remounts
 const globalEnrichedCache = new Map();
 const globalProcessedTrips = new Set();
 
-// Add these exported functions
 export const clearMapCache = (tripId, destination) => {
   const cacheKey = `${tripId}_${destination}`;
   globalEnrichedCache.delete(cacheKey);
   globalProcessedTrips.delete(cacheKey);
-  console.log(`🗑️ Cleared map cache for trip ${tripId}`);
 };
 
 export const clearMapCacheByTripId = (tripId) => {
@@ -23,7 +20,6 @@ export const clearMapCacheByTripId = (tripId) => {
       globalProcessedTrips.delete(key);
     }
   }
-  console.log(`🗑️ Cleared all map cache for trip ${tripId}`);
 };
 
 // Helper function to calculate distance from city center
@@ -42,7 +38,7 @@ const calculateDistanceFromCenter = (lat1, lng1, lat2, lng2) => {
   return R * c; // Distance in meters
 };
 
-// ENHANCED coordinate validation - check distance from specific district/area
+// coordinate validation - check distance from specific district/area
 const validateDistrictCoordinates = (
   lat,
   lng,
@@ -51,7 +47,6 @@ const validateDistrictCoordinates = (
   maxDistanceKm = 5
 ) => {
   if (!districtCoords || !districtCoords.lat || !districtCoords.lng) {
-    console.warn(`⚠️ No district coordinates available for ${districtName}`);
     return true; // Allow if we don't have district coords
   }
 
@@ -64,25 +59,9 @@ const validateDistrictCoordinates = (
   );
 
   const isValid = distanceFromDistrict <= maxDistanceKm * 1000; // Convert to meters
-
-  if (!isValid) {
-    console.warn(
-      `❌ REJECTED: Activity too far from ${districtName}: ${Math.round(
-        distanceFromDistrict / 1000
-      )}km (max: ${maxDistanceKm}km from district)`
-    );
-  } else {
-    console.log(
-      `✅ ACCEPTED: Valid coordinates within ${Math.round(
-        distanceFromDistrict / 1000
-      )}km from ${districtName} (max: ${maxDistanceKm}km)`
-    );
-  }
-
   return isValid;
 };
 
-// GENERIC coordinate validation for any city destination (fallback for city-level validation)
 const validateCityCoordinates = (
   lat,
   lng,
@@ -98,27 +77,10 @@ const validateCityCoordinates = (
   );
 
   const isValid = distanceFromCenter <= maxDistanceKm * 1000; // Convert to meters
-
-  if (!isValid) {
-    console.warn(
-      `❌ REJECTED: Coordinates too far from ${
-        destinationCoords.cityName || "city center"
-      }: ${Math.round(distanceFromCenter / 1000)}km (max: ${maxDistanceKm}km)`
-    );
-  } else {
-    console.log(
-      `✅ ACCEPTED: Valid coordinates within ${Math.round(
-        distanceFromCenter / 1000
-      )}km from ${
-        destinationCoords.cityName || "city center"
-      } (max: ${maxDistanceKm}km)`
-    );
-  }
-
   return isValid;
 };
 
-// Enhanced destination coordinate fetching with city name storage
+// destination coordinate fetching with city name storage
 const getDestinationCoords = async (destination) => {
   if (!destination) return { lat: 41.3851, lng: 2.1734, cityName: "Unknown" };
 
@@ -137,13 +99,13 @@ const getDestinationCoords = async (destination) => {
       }
     }
   } catch (error) {
-    console.error("Error fetching destination coordinates:", error);
+    // Error handling
   }
 
   return { lat: 41.3851, lng: 2.1734, cityName: destination }; // Fallback
 };
 
-// ENHANCED address-based coordinate search with district-based validation
+// address-based coordinate search with district-based validation
 const getCoordinatesFromAddress = async (
   address,
   fallbackQuery,
@@ -153,7 +115,6 @@ const getCoordinatesFromAddress = async (
   districtCoords = null
 ) => {
   if (!address || address.length < 5) {
-    console.warn("Address too short or missing:", address);
     return null;
   }
 
@@ -168,7 +129,6 @@ const getCoordinatesFromAddress = async (
     if (!query) continue;
 
     try {
-      console.log(`🔍 Searching for address: "${query}"`);
       const response = await fetch(
         `/api/map/search?query=${encodeURIComponent(query)}`
       );
@@ -205,13 +165,6 @@ const getCoordinatesFromAddress = async (
                   5
                 )
               ) {
-                console.log(
-                  `✅ Valid address coordinates for "${query}" within ${district}: ${
-                    result.lat
-                  }, ${result.lng} (${Math.round(
-                    result.distanceFromReference / 1000
-                  )}km from district center)`
-                );
                 return {
                   lat: result.lat + (Math.random() - 0.5) * 0.0002,
                   lng: result.lng + (Math.random() - 0.5) * 0.0002,
@@ -229,13 +182,6 @@ const getCoordinatesFromAddress = async (
                   15
                 )
               ) {
-                console.log(
-                  `✅ Valid address coordinates for "${query}" within city: ${
-                    result.lat
-                  }, ${result.lng} (${Math.round(
-                    result.distanceFromReference / 1000
-                  )}km from city center)`
-                );
                 return {
                   lat: result.lat + (Math.random() - 0.5) * 0.0002,
                   lng: result.lng + (Math.random() - 0.5) * 0.0002,
@@ -245,14 +191,9 @@ const getCoordinatesFromAddress = async (
               }
             }
           }
-
-          console.warn(
-            `❌ All results for "${query}" failed district/city validation`
-          );
         }
       }
     } catch (error) {
-      console.warn(`Address search failed for: "${query}"`, error);
       continue;
     }
 
@@ -287,7 +228,7 @@ const getGenericDistrictOffset = (district, index = 0) => {
   };
 };
 
-// Enhanced activity coordinate search with district-based validation
+// activity coordinate search with district-based validation
 const getActivityCoordinatesEnhanced = async (
   activity,
   destination,
@@ -299,20 +240,12 @@ const getActivityCoordinatesEnhanced = async (
   const activityName = activity.title || activity.name || "Unknown Activity";
   const address = activity.address;
 
-  console.log(`🔍 DEBUG - Processing activity:`, {
-    name: activityName,
-    address: address,
-    district: district,
-    fullActivity: activity,
-  });
-
   // Get district coordinates for validation
   const currentDistrictCoords = districtCoords[district];
 
   try {
     // Strategy 1: Use address if available
     if (address && address.length > 5) {
-      console.log(`✅ Using address for ${activityName}: ${address}`);
       const coords = await getCoordinatesFromAddress(
         address,
         activityName,
@@ -327,16 +260,9 @@ const getActivityCoordinatesEnhanced = async (
           searchMethod: "address",
         };
       }
-      console.log(`❌ Address search failed for: ${address}`);
-    } else {
-      console.log(
-        `⚠️ No valid address found for ${activityName}. Address:`,
-        address
-      );
     }
 
     // Strategy 2: Fall back to name-based search with district validation
-    console.log(`📛 Falling back to name search for: ${activityName}`);
     const searchQueries = [
       `${activityName}, ${district}, ${destination}`,
       `${activityName}, ${destination}`,
@@ -381,11 +307,6 @@ const getActivityCoordinatesEnhanced = async (
                     3
                   )
                 ) {
-                  console.log(
-                    `✅ Found ${activityName} within ${district}: ${Math.round(
-                      result.distanceFromReference / 1000
-                    )}km from district center`
-                  );
                   return {
                     lat: result.lat + (Math.random() - 0.5) * 0.0001,
                     lng: result.lng + (Math.random() - 0.5) * 0.0001,
@@ -403,11 +324,6 @@ const getActivityCoordinatesEnhanced = async (
                     15
                   )
                 ) {
-                  console.log(
-                    `✅ Found ${activityName} within city: ${Math.round(
-                      result.distanceFromReference / 1000
-                    )}km from city center`
-                  );
                   return {
                     lat: result.lat + (Math.random() - 0.5) * 0.0001,
                     lng: result.lng + (Math.random() - 0.5) * 0.0001,
@@ -420,7 +336,6 @@ const getActivityCoordinatesEnhanced = async (
           }
         }
       } catch (error) {
-        console.warn(`Search failed for: "${query}"`, error);
         continue;
       }
 
@@ -428,7 +343,6 @@ const getActivityCoordinatesEnhanced = async (
     }
 
     // Strategy 3: District-based fallback
-    console.warn(`Using district fallback for ${activityName} in ${district}`);
     const fallbackOffset = getGenericDistrictOffset(district, index);
     const baseCoords = currentDistrictCoords || destinationCoords;
     const fallbackDistance =
@@ -440,7 +354,6 @@ const getActivityCoordinatesEnhanced = async (
       distanceFromReference: fallbackDistance,
     };
   } catch (error) {
-    console.error(`Error searching for ${activityName}:`, error);
     const fallbackOffset = getGenericDistrictOffset(district, index);
     const baseCoords = currentDistrictCoords || destinationCoords;
     const fallbackDistance =
@@ -463,21 +376,16 @@ const extractLocation = (dayData) => {
 };
 
 const extractActivities = (dayData) => {
-  console.log(`🔍 DEBUG - extractActivities input:`, dayData);
-
   if (Array.isArray(dayData)) {
     return dayData;
   } else if (typeof dayData === "object") {
     if (dayData.activities) {
-      console.log(`🔍 DEBUG - Found activities array:`, dayData.activities);
       return dayData.activities;
     } else {
       // Time-based format like {"09:00": {title: "...", type: "...", address: "..."}, "11:00": {...}}
       const timeBasedActivities = Object.entries(dayData)
         .filter(([key]) => key !== "date" && key !== "district") // Filter out non-time keys
         .map(([time, activity]) => {
-          console.log(`🔍 DEBUG - Processing time ${time}:`, activity);
-
           return {
             time,
             title:
@@ -490,10 +398,6 @@ const extractActivities = (dayData) => {
           };
         });
 
-      console.log(
-        `🔍 DEBUG - Extracted time-based activities:`,
-        timeBasedActivities
-      );
       return timeBasedActivities;
     }
   }
@@ -541,8 +445,6 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
     itineraryData = rawItinerary.itinerary;
   }
 
-  console.log("Processing itinerary data with address support:", itineraryData);
-
   // Extract unique districts from itinerary data
   const uniqueDistricts = new Set();
   Object.values(itineraryData).forEach((dayData) => {
@@ -556,7 +458,6 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
   const districtCoords = {};
   for (const district of uniqueDistricts) {
     try {
-      console.log(`🔍 Searching for district: ${district}`);
       const response = await fetch(
         `/api/map/search?query=${encodeURIComponent(
           `${district}, ${destination}`
@@ -594,19 +495,12 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
                 lat: result.lat,
                 lng: result.lng,
               };
-              console.log(
-                `📍 Found district: ${district} (${Math.round(
-                  result.distanceFromCenter / 1000
-                )}km from center)`
-              );
               break;
             }
           }
         }
       }
-    } catch (error) {
-      console.warn(`Failed to find district coordinates for: ${district}`);
-    }
+    } catch (error) {}
 
     if (!districtCoords[district]) {
       const offset = getGenericDistrictOffset(district);
@@ -614,7 +508,6 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
         lat: destinationCoords.lat + offset.lat,
         lng: destinationCoords.lng + offset.lng,
       };
-      console.log(`📌 Using fallback coordinates for district: ${district}`);
     }
 
     await new Promise((resolve) => setTimeout(resolve, 200));
@@ -628,8 +521,6 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
     const enrichedActivities = [];
 
     const dayDistrict = extractLocation(dayData) || destination;
-
-    console.log(`Processing ${dayKey} in ${dayDistrict}:`, activities);
 
     for (let i = 0; i < activities.length; i++) {
       const activity = activities[i];
@@ -652,9 +543,6 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
         );
 
         if (isDuplicate) {
-          console.log(
-            `⚠️ Duplicate coordinates detected for ${activity.title}, adding offset`
-          );
           coords.lat += (Math.random() - 0.5) * 0.002; // ~200m offset
           coords.lng += (Math.random() - 0.5) * 0.002;
         }
@@ -669,7 +557,7 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
           district: dayDistrict,
           address: activity.address || null,
           searchMethod: coords.searchMethod,
-          distanceFromCenter: coords.distanceFromCenter || 0,
+          distanceFromCenter: coords.distanceFromReference || 0,
         });
 
         // Delay between searches
@@ -677,7 +565,6 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
           await new Promise((resolve) => setTimeout(resolve, 300));
         }
       } catch (error) {
-        console.warn(`Failed to get coordinates for ${activity.title}:`, error);
         const fallbackOffset = getGenericDistrictOffset(dayDistrict, i);
         const fallbackDistance =
           Math.sqrt(fallbackOffset.lat ** 2 + fallbackOffset.lng ** 2) * 111000;
@@ -705,7 +592,6 @@ const enrichItineraryWithCoordinates = async (rawItinerary, destination) => {
     }
   }
 
-  console.log("Enriched itinerary with addresses:", enriched);
   return enriched;
 };
 
@@ -740,7 +626,7 @@ function MapVisualization(props) {
         const coords = await getDestinationCoords(destination);
         setDestinationCoords(coords);
       } catch (error) {
-        console.error("Error fetching destination coordinates:", error);
+        // Error handling
       }
     };
 
@@ -757,7 +643,6 @@ function MapVisualization(props) {
         globalEnrichedCache.has(cacheKey) &&
         globalProcessedTrips.has(cacheKey)
       ) {
-        console.log("✅ Using cached itinerary data - no processing needed");
         const cached = globalEnrichedCache.get(cacheKey);
         setItinerary(cached.itinerary);
         setSelectedDays(cached.selectedDays);
@@ -791,11 +676,9 @@ function MapVisualization(props) {
         }
 
         const data = await response.json();
-        console.log("Raw itinerary data:", data);
 
         // Only process coordinates if we haven't done it before
         if (!globalProcessedTrips.has(cacheKey)) {
-          console.log("🔄 Processing coordinates with generic validation...");
           setEnrichmentStatus("Adding coordinates with validation...");
 
           // Get destination coordinates
@@ -812,7 +695,6 @@ function MapVisualization(props) {
             setError("No valid itinerary data found.");
           } else {
             const selectedDaysList = Object.keys(transformedItinerary);
-            console.log(`🔍 DEBUG - Final enriched days:`, selectedDaysList);
 
             // Cache the enriched data globally
             globalEnrichedCache.set(cacheKey, {
@@ -825,7 +707,6 @@ function MapVisualization(props) {
             setItinerary(transformedItinerary);
             setSelectedDays(selectedDaysList);
             setEnrichmentStatus("");
-            console.log("✅ Coordinates processed with validation and cached!");
           }
         } else {
           const cached = globalEnrichedCache.get(cacheKey);
@@ -836,7 +717,6 @@ function MapVisualization(props) {
           }
         }
       } catch (err) {
-        console.error("Error loading itinerary:", err);
         setError(`Failed to load itinerary: ${err.message}`);
         setEnrichmentStatus("");
       } finally {

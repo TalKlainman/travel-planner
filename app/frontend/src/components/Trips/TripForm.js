@@ -1,21 +1,18 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Box,
   TextField,
   Button,
   Grid,
-  FormControl,
   FormHelperText,
   MenuItem,
   InputAdornment,
-  Typography,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { Save, X, Calendar, MapPin, DollarSign } from "lucide-react";
 
-// Define locations - in a real app, this would come from an API or database
 const locations = [
   { id: 1, name: "Rome", country: "Italy" },
   { id: 2, name: "Paris", country: "France" },

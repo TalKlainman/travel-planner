@@ -1,48 +1,20 @@
-// In services/microservices.js
 import api from "./api";
 
 export const itineraryService = {
   generateItinerary: async (tripId, tripData) => {
-    // This should match your backend endpoint
     return api.post(`/itinerary/generate/${tripId}`, tripData);
   },
 
   getItinerary: async (tripId) => {
-    // This should match your backend endpoint
     return api.get(`/itinerary/itinerary/${tripId}`);
   },
 
-  // Add this method to check generation status
   checkStatus: async (tripId) => {
     return api.get(`/itinerary/status/${tripId}`);
   },
 };
 
-// export const mapService = {
-//   searchLocations: async (query, country = null) => {
-//     let url = `/map/search?query=${encodeURIComponent(query)}`;
-//     if (country) {
-//       url += `&country=${encodeURIComponent(country)}`;
-//     }
-
-//     return api.get(url);
-//   },
-
-//   getNearbyAttractions: async (lat, lng, radius = 1000, category = null) => {
-//     const params = { lat, lng, radius };
-//     if (category) {
-//       params.category = category;
-//     }
-
-//     return api.post("/map/nearby", params);
-//   },
-// };
-
-// Enhanced map services for frontend
-import api from "./api";
-
 export const mapService = {
-  // Existing services
   searchLocations: async (query, country = null) => {
     let url = `/map/search?query=${encodeURIComponent(query)}`;
     if (country) {
@@ -58,8 +30,6 @@ export const mapService = {
     }
     return api.post("/map/nearby", params);
   },
-
-  // NEW ENHANCED SERVICES FOR TRIP VISUALIZATION
 
   /**
    * Get complete visualization data for a trip
@@ -161,9 +131,8 @@ export const mapService = {
   },
 };
 
-// Enhanced itinerary service with map integration
+// itinerary service with map integration
 export const enhancedItineraryService = {
-  // Existing services
   generateItinerary: async (tripId, tripData) => {
     return api.post(`/itinerary/generate/${tripId}`, tripData);
   },
@@ -176,7 +145,7 @@ export const enhancedItineraryService = {
     return api.get(`/itinerary/status/${tripId}`);
   },
 
-  // NEW: Get itinerary with visualization data
+  // Get itinerary with visualization data
   getItineraryWithVisualization: async (tripId) => {
     try {
       // First get the itinerary
@@ -211,7 +180,6 @@ export const enhancedItineraryService = {
   },
 };
 
-// Utility functions for working with map data
 export const mapUtils = {
   /**
    * Transform itinerary data from your format to map visualization format
@@ -229,7 +197,6 @@ export const mapUtils = {
       let activities = [];
 
       if (Array.isArray(dayData)) {
-        // Array format
         activities = dayData.map((activity, index) => ({
           name:
             typeof activity === "string"
@@ -237,12 +204,11 @@ export const mapUtils = {
               : activity.name || activity.title,
           time: activity.time || `${9 + index * 2}:00`,
           type: activity.type || "attraction",
-          lat: activity.lat || 41.3851 + index * 0.01, // Default to Barcelona area
+          lat: activity.lat || 41.3851 + index * 0.01,
           lng: activity.lng || 2.1734 + index * 0.01,
           location: activity.location || "Barcelona",
         }));
       } else if (typeof dayData === "object") {
-        // Object format - could be time-based or activities array
         if (dayData.activities) {
           activities = dayData.activities.map((activity, index) => ({
             name:
@@ -455,5 +421,4 @@ export const useRouteOptimization = () => {
   };
 };
 
-// Export everything
 export default mapService;

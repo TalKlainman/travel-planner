@@ -1,10 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from datetime import date, timedelta, datetime, UTC
+from sqlalchemy.orm import sessionmaker
+from datetime import date, timedelta
 import os
-import json
 
 from main import app
 from database import Base, get_db

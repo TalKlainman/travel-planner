@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Typography,
   Button,
-  Paper,
   Container,
   CircularProgress,
   Alert,
@@ -14,8 +13,6 @@ import {
   Card,
   CardHeader,
   CardContent,
-  Stack,
-  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -39,7 +36,6 @@ import {
 } from "lucide-react";
 import api from "../services/api";
 
-// Import our new components
 import ItineraryDisplay from "../components/ItineraryDisplay";
 import MapVisualization from "../components/MapVisualization";
 

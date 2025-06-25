@@ -8,20 +8,17 @@ The application is built using a microservices architecture with the following c
 
 - **Frontend**: React-based UI for user interaction
 - **Backend**: FastAPI service for core functionality and data persistence
-- **Itinerary Service**: AI-powered trip itinerary generator using Ollama
-- **Map Service**: Location search and nearby attractions using OpenStreetMap
+- **Itinerary Service**: AI-powered trip itinerary generator using Groq (LLaMA 3)
+- **Map Service**: Itinerary-based attractions and routes using OpenStreetMap
 - **Database**: PostgreSQL for data storage
-- **LLM Service**: Ollama for natural language processing
 
 ## Features
 
 - User authentication (login/registration)
-- Trip planning with date ranges and budgets
+- Trip planning with date ranges and locations
 - Personal preference management
 - AI-generated itineraries based on preferences
-- Location search and discovery
-- Nearby attraction recommendations
-- Responsive design for mobile and desktop
+- Interactive map view of itinerary attractions and travel routes
 
 ## Getting Started
 
@@ -53,10 +50,6 @@ python integration_test.py
 
 ## Microservices
 
-### Frontend Service (Port 80)
-
-React-based frontend application with Material UI components.
-
 ### Backend Service (Port 8000)
 
 FastAPI application that handles core functionality:
@@ -68,19 +61,27 @@ FastAPI application that handles core functionality:
 
 ### Itinerary Service (Port 8001)
 
-Generates AI-powered trip itineraries using Ollama:
+Generates AI-powered trip itineraries using Groq:
 
 - Day-by-day activity planning
+- Smart location clustering by neighborhood
 - Preference-based customization
-- Budget-aware recommendations
 
 ### Map Service (Port 8002)
 
-Provides location data and nearby attractions:
+Provides itinerary-based map visualization using OpenStreetMap:
 
-- Location search
-- Country-based filtering
-- Nearby point of interest discovery
+- Interactive map showing daily trip routes and attractions
+- Day-by-day location grouping
+- Custom marker clustering per day
+
+### Frontend Service (Port 80)
+
+- React-based frontend application with Material UI components
+
+### Postgres Service (Port 5432)
+
+- Relational database for storing all trip data
 
 ## Project Structure
 
@@ -89,7 +90,7 @@ travel-planner/
 │ ├── backend/ # Core FastAPI application
 │ ├── frontend/ # React frontend
 │ ├── itinerary-service/ # Itinerary generation microservice
-│ └── map-service/ # Location data microservice
+│ └── map-service/ # Map visualization microservice
 ├── integration_test.py # Integration test script
 ├── docker-compose.yml # Docker Compose configuration
 └── README.md # Project documentation
@@ -99,7 +100,7 @@ travel-planner/
 - **Frontend**: React, Material UI, React Router
 - **Backend**: FastAPI, SQLAlchemy, JWT Authentication
 - **Database**: PostgreSQL
-- **AI**: Ollama (Llama 3)
+- **AI**: Groq (Llama 3)
 - **Map**: OpenStreetMap APIs
 - **Containerization**: Docker, Docker Compose
 - **Testing**: httpx, pytest

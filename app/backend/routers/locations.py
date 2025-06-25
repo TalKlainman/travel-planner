@@ -19,8 +19,7 @@ def create_location(
     db: Session = Depends(get_db),
     current_user: models.DBUser = Depends(get_current_active_user)
 ):
-    """Create a new location (admin only in a real app)"""
-    # In a real app, check if user is admin
+    """Create a new location """
     db_location = models.DBLocation(**location.dict())
     db.add(db_location)
     db.commit()
@@ -38,7 +37,6 @@ def read_locations(
 ):
     """
     Get all locations with optional filtering.
-    This endpoint doesn't require authentication since location data is public.
     """
     query = db.query(models.DBLocation)
     
@@ -99,8 +97,7 @@ def delete_location(
     db: Session = Depends(get_db),
     current_user: models.DBUser = Depends(get_current_active_user)
 ):
-    """Delete a location (admin only in a real app)"""
-    # In a real app, check if user is admin
+    """Delete a location """
     db_location = db.query(models.DBLocation).filter(models.DBLocation.id == location_id).first()
     if db_location is None:
         raise HTTPException(status_code=404, detail="Location not found")

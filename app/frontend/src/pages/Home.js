@@ -1,10 +1,8 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { Box, Typography, Button, Grid, Paper, Container } from "@mui/material";
 import { PlaneLanding, MapPin, Calendar, Compass } from "lucide-react";
 import { styled } from "@mui/material/styles";
 
-// Custom styled components
 const FeatureCard = styled(Paper)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
@@ -87,7 +85,6 @@ const Home = () => {
             </Typography>
           </Box>
 
-          {/* Feature Cards with right padding to shift them rightward */}
           <Box sx={{ pl: { xs: 0, md: 8 }, pr: { xs: 0, md: 2 }, mb: 6 }}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>

@@ -1,12 +1,9 @@
-# Enhanced map service with trip visualization features
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 import httpx
-import os
 import logging
 from fastapi.middleware.cors import CORSMiddleware
-import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -19,16 +16,14 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Enhanced Models
 class TripActivity(BaseModel):
     name: str
     time: str
@@ -50,7 +45,7 @@ class RouteOptimizationRequest(BaseModel):
     activities: List[TripActivity]
     start_location: Optional[TripActivity] = None
     end_location: Optional[TripActivity] = None
-    optimization_type: str = "shortest"  # shortest, fastest, balanced
+    optimization_type: str = "shortest"  
 
 class RouteSegment(BaseModel):
     from_activity: str
@@ -66,7 +61,6 @@ class OptimizedRoute(BaseModel):
     total_duration: float
     improvement_percentage: float
 
-# Existing endpoints (keeping your current ones)
 @app.get("/")
 async def read_root():
     """Health check endpoint"""
@@ -119,8 +113,6 @@ async def search_locations(query: str, country: Optional[str] = None):
     except Exception as e:
         logger.error(f"Location search failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Location search failed: {str(e)}")
-
-# NEW ENDPOINTS FOR TRIP VISUALIZATION
 
 @app.post("/trip/visualize")
 async def visualize_trip(request: TripVisualizationRequest):
@@ -175,7 +167,7 @@ async def visualize_trip(request: TripVisualizationRequest):
                     current = day_activities[i]
                     next_activity = day_activities[i + 1]
                     
-                    # Calculate straight-line distance (in a real app, use routing API)
+                    # Calculate straight-line distance 
                     distance = calculate_distance(
                         current["lat"], current["lng"],
                         next_activity["lat"], next_activity["lng"]
@@ -251,7 +243,7 @@ async def optimize_route(request: RouteOptimizationRequest):
                 improvement_percentage=0
             )
         
-        # Simple nearest neighbor optimization (in production, use more sophisticated algorithms)
+        # Simple nearest neighbor optimization 
         original_distance = calculate_route_distance(request.activities)
         optimized_activities = optimize_using_nearest_neighbor(request.activities)
         optimized_distance = calculate_route_distance(optimized_activities)
@@ -293,7 +285,6 @@ async def get_nearby_suggestions(trip_id: str, lat: float, lng: float, radius: i
     Get nearby attraction suggestions for adding to itinerary
     """
     try:
-        # Use existing nearby search logic but format for trip planning
         overpass_query = f"""
         [out:json];
         (
@@ -374,8 +365,6 @@ async def get_nearby_suggestions(trip_id: str, lat: float, lng: float, radius: i
         logger.error(f"Nearby suggestions failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Nearby suggestions failed: {str(e)}")
 
-# UTILITY FUNCTIONS
-
 def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     """Calculate distance between two points using Haversine formula"""
     from math import radians, sin, cos, sqrt, asin
@@ -444,15 +433,8 @@ def estimate_walking_time(distance_meters: float) -> float:
 async def add_activity_to_trip(trip_id: str, activity: TripActivity, day: str, insert_at: Optional[int] = None):
     """
     Add a new activity to an existing trip day
-    This would integrate with your trip database in production
     """
     try:
-        # In production, this would:
-        # 1. Validate trip_id exists and user has permission
-        # 2. Insert activity into database
-        # 3. Optionally re-optimize the route
-        # 4. Return updated day itinerary
-        
         return {
             "trip_id": trip_id,
             "day": day,
@@ -466,7 +448,6 @@ async def add_activity_to_trip(trip_id: str, activity: TripActivity, day: str, i
         logger.error(f"Add activity failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to add activity: {str(e)}")
 
-# Keep your existing endpoints
 @app.post("/nearby")
 async def find_nearby_attractions(request: dict):
     """Find nearby attractions or points of interest (existing endpoint)"""
