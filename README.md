@@ -2,13 +2,13 @@
 
 A microservices-based travel planning application that helps users create and manage trip itineraries with AI-generated recommendations based on personal preferences.
 
-## System Architecture Diagram
-
-![System Architecture](assets/system-architecture.png)
-
 ## Demo
 
 [Watch the demo video](https://youtu.be/0Sz5CaqTw7M)
+
+## System Architecture Diagram
+
+![System Architecture](assets/system-architecture.png)
 
 ## Architecture
 
