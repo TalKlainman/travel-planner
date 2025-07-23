@@ -9,6 +9,7 @@ from database import get_db
 from models import DBUser
 import os
 
+
 # Security constants
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
@@ -52,12 +53,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        user_id: str = payload.get("sub")
+        if user_id is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = db.query(DBUser).filter(DBUser.email == email).first()
+    user = db.query(DBUser).filter(DBUser.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
     return user
