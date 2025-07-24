@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -13,19 +13,6 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { Save, X, Calendar, MapPin, DollarSign } from "lucide-react";
 
-const locations = [
-  { id: 1, name: "Rome", country: "Italy" },
-  { id: 2, name: "Paris", country: "France" },
-  { id: 3, name: "Barcelona", country: "Spain" },
-  { id: 4, name: "London", country: "United Kingdom" },
-  { id: 5, name: "Berlin", country: "Germany" },
-  { id: 6, name: "Tokyo", country: "Japan" },
-  { id: 7, name: "New York", country: "USA" },
-  { id: 8, name: "Sydney", country: "Australia" },
-  { id: 9, name: "Cairo", country: "Egypt" },
-  { id: 10, name: "Rio de Janeiro", country: "Brazil" },
-];
-
 const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
   const parseDate = (dateString) => {
     if (!dateString) return null;
@@ -37,6 +24,31 @@ const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
     }
     return date;
   };
+
+  // Add state for locations
+  const [locations, setLocations] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+  const [locationsError, setLocationsError] = useState(null);
+
+  useEffect(() => {
+    // Fetch locations from backend API
+    const fetchLocations = async () => {
+      setLoadingLocations(true);
+      setLocationsError(null);
+      try {
+        // Adjust the URL if your API base path is different
+        const response = await fetch("/api/locations");
+        if (!response.ok) throw new Error("Failed to fetch locations");
+        const data = await response.json();
+        setLocations(data);
+      } catch (err) {
+        setLocationsError("Could not load locations");
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   const [formData, setFormData] = useState({
     title: initialData.title || "",
@@ -178,7 +190,7 @@ const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
               value={formData.destination}
               onChange={handleChange}
               error={!!errors.destination}
-              helperText={errors.destination || ""}
+              helperText={errors.destination || locationsError || ""}
               size="small"
               InputProps={{
                 startAdornment: (
@@ -187,9 +199,10 @@ const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
                   </InputAdornment>
                 ),
               }}
+              disabled={loadingLocations || !!locationsError}
             >
               <MenuItem value="">
-                <em>Select a destination</em>
+                <em>{loadingLocations ? "Loading..." : "Select a destination"}</em>
               </MenuItem>
               {locations.map((location) => (
                 <MenuItem
