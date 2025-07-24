@@ -59,8 +59,6 @@ const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
     description: initialData.description || "",
   });
 
-
-
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
@@ -135,16 +133,15 @@ const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
       const formattedData = {
         ...formData,
         start_date: formData.start_date
-          ? formData.start_date.toLocaleDateString('en-CA') 
+          ? formData.start_date.toLocaleDateString("en-CA")
           : null,
         end_date: formData.end_date
-          ? formData.end_date.toLocaleDateString('en-CA') 
+          ? formData.end_date.toLocaleDateString("en-CA")
           : null,
         budget: formData.budget ? Number(formData.budget) : undefined,
       };
 
       onSubmit(formattedData);
-
     }
   };
 
@@ -202,7 +199,9 @@ const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
               disabled={loadingLocations || !!locationsError}
             >
               <MenuItem value="">
-                <em>{loadingLocations ? "Loading..." : "Select a destination"}</em>
+                <em>
+                  {loadingLocations ? "Loading..." : "Select a destination"}
+                </em>
               </MenuItem>
               {locations.map((location) => (
                 <MenuItem
