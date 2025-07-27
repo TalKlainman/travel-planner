@@ -9,16 +9,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-class LocationRequest(BaseModel):
-    name: str
-    country: Optional[str] = None
-
-class NearbyRequest(BaseModel):
-    lat: float
-    lng: float
-    radius: Optional[int] = 1000  # Default 1km radius
-    category: Optional[str] = None  # Type of POI
-
 class Location(BaseModel):
     name: str
     country: str
@@ -26,13 +16,6 @@ class Location(BaseModel):
     lng: float
     description: Optional[str] = None
     image_url: Optional[str] = None
-
-class NearbyAttraction(BaseModel):
-    name: str
-    type: str
-    lat: float
-    lng: float
-    distance: float
 
 @app.get("/")
 async def read_root():
@@ -79,56 +62,6 @@ async def search_locations(query: str, country: Optional[str] = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Location search failed: {str(e)}")
 
-@app.post("/nearby", response_model=List[NearbyAttraction])
-async def find_nearby_attractions(request: NearbyRequest):
-    """Find nearby attractions or points of interest"""
-    try:
-        # Use Overpass API (more powerful OpenStreetMap query API)
-        radius = min(request.radius, 5000)  # Cap at 5km for performance
-        
-        # Build Overpass query
-        query_type = "node"
-        if request.category:
-            query_type += f'["tourism"="{request.category}"]'
-        
-        overpass_query = f"""
-        [out:json];
-        {query_type}(around:{radius},{request.lat},{request.lng});
-        out center;
-        """
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://overpass-api.de/api/interpreter",
-                data={"data": overpass_query}
-            )
-            
-            if response.status_code != 200:
-                raise HTTPException(status_code=500, detail="Failed to find nearby attractions")
-                
-            results = response.json()
-            
-            attractions = []
-            for element in results.get("elements", []):
-                lat = element.get("lat") or element.get("center", {}).get("lat", 0)
-                lng = element.get("lon") or element.get("center", {}).get("lon", 0)
-                
-                # Calculate rough distance (not accounting for Earth's curvature)
-                dx = 111.32 * (request.lat - lat)  # km per degree latitude
-                dy = 111.32 * (request.lng - lng) * abs(request.lat) / 90  # km per degree longitude
-                distance = (dx**2 + dy**2)**0.5 * 1000  # convert to meters
-                
-                attractions.append(NearbyAttraction(
-                    name=element.get("tags", {}).get("name", "Unnamed"),
-                    type=element.get("tags", {}).get("tourism", "attraction"),
-                    lat=lat,
-                    lng=lng,
-                    distance=distance
-                ))
-                
-            return sorted(attractions, key=lambda x: x.distance)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Nearby search failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

@@ -42,6 +42,7 @@ class ItineraryService:
             
             return response.status_code, response.json() if response.status_code != 204 else {}
     
+    
     async def get_itinerary(self, trip_id: str) -> Tuple[int, Dict[str, Any]]:
         """Get a generated itinerary"""
         async with httpx.AsyncClient() as client:
@@ -50,45 +51,22 @@ class ItineraryService:
                     f"{self.base_url}/itinerary/itinerary/{trip_id}",
                     timeout=10.0
                 )
-                
-                if response.status_code < 400:
-                    if response.status_code == 202:
-                        # Still processing
-                        return response.status_code, {
-                            "status": "pending", 
-                            "message": "Itinerary generation in progress"
-                        }
-                    return response.status_code, response.json() if response.status_code == 200 else {}
-            except Exception:
-                pass
-                
-            try:
-                response = await client.get(
-                    f"{self.base_url}/itinerary/{trip_id}",
-                    timeout=10.0
-                )
-                
+
                 if response.status_code == 202:
-                    # Still processing
                     return response.status_code, {
                         "status": "pending", 
                         "message": "Itinerary generation in progress"
                     }
-                    
-                return response.status_code, response.json() if response.status_code == 200 else {}
-            except Exception:
-                pass
-            
-            response = await client.get(
-                f"{self.base_url}/{trip_id}",
-                timeout=10.0
-            )
-            
-            if response.status_code == 202:
-                # Still processing
-                return response.status_code, {
-                    "status": "pending", 
-                    "message": "Itinerary generation in progress"
-                }
+
+                elif response.status_code == 200:
+                    return response.status_code, response.json()
+                else:
+                    return response.status_code, {}
                 
-            return response.status_code, response.json() if response.status_code == 200 else {}
+            except Exception as e:
+                return 500, {
+                    "status": "error",
+                    "message": f"Failed to fetch itinerary: {str(e)}"
+                }
+
+    

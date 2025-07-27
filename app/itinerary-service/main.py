@@ -153,7 +153,7 @@ async def generate_with_groq(prompt):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "llama3-70b-8192",  # Much smarter than local models
+                    "model": "llama3-70b-8192",  
                     "messages": [
                         {"role": "system", "content": "You are a local travel expert with detailed knowledge of specific addresses and locations. You know the exact addresses of popular restaurants, attractions, and landmarks. Always include real, specific addresses in your recommendations."},
                         {"role": "user", "content": prompt}
@@ -609,7 +609,8 @@ async def get_generation_status_endpoint(trip_id: str):
     else:
         return {"status": "failed", "message": "Itinerary generation failed"}
 
-@app.get("/itinerary/{trip_id}", response_model=ItineraryResponse)
+
+@app.get("/itinerary/itinerary/{trip_id}", response_model=ItineraryResponse)
 async def get_itinerary(trip_id: str):
     """Get a generated itinerary with addresses"""
     try:
@@ -628,7 +629,6 @@ async def get_itinerary(trip_id: str):
     if itinerary_data['generation_status'] == 'failed':
         raise HTTPException(status_code=500, detail="Itinerary generation failed")
     
-    # Parse JSON content
     try:
         content = json.loads(itinerary_data['itinerary']) if isinstance(itinerary_data['itinerary'], str) else itinerary_data['itinerary']
     except:
@@ -636,13 +636,6 @@ async def get_itinerary(trip_id: str):
     
     return {"itinerary": content}
 
-@app.get("/{trip_id}", response_model=ItineraryResponse)
-async def get_itinerary_root(trip_id: str):
-    return await get_itinerary(trip_id)
-
-@app.get("/itinerary/itinerary/{trip_id}", response_model=ItineraryResponse)
-async def get_itinerary_alternate(trip_id: str):
-    return await get_itinerary(trip_id)
 
 @app.delete("/clear/{trip_id}")
 async def clear_itinerary(trip_id: str):
@@ -680,22 +673,22 @@ async def clear_itinerary(trip_id: str):
         logger.error(f"Error clearing itinerary for trip {trip_id}: {e}")
         return {"message": f"Cleared itinerary for trip {trip_id} (with warning: {str(e)})"}
 
-@app.delete("/clear-all")
-async def clear_all_itineraries():
-    """Clear all itineraries (for testing)"""
-    async with db_pool.acquire() as conn:
-        await conn.execute(
-            """UPDATE trips 
-               SET itinerary = NULL, generation_status = 'pending', generation_id = NULL,
-                   generation_started_at = NULL, generation_updated_at = NULL"""
-        )
+# @app.delete("/clear-all")
+# async def clear_all_itineraries():
+#     """Clear all itineraries (for testing)"""
+#     async with db_pool.acquire() as conn:
+#         await conn.execute(
+#             """UPDATE trips 
+#                SET itinerary = NULL, generation_status = 'pending', generation_id = NULL,
+#                    generation_started_at = NULL, generation_updated_at = NULL"""
+#         )
     
-    return {"message": "Cleared all itineraries"}
+#     return {"message": "Cleared all itineraries"}
 
-@app.get("/test")
-async def test_endpoint():
-    """Test endpoint to verify CORS is working"""
-    return {"message": "CORS is working!", "timestamp": datetime.now().isoformat()}
+# @app.get("/test")
+# async def test_endpoint():
+#     """Test endpoint to verify CORS is working"""
+#     return {"message": "CORS is working!", "timestamp": datetime.now().isoformat()}
 
 if __name__ == "__main__":
     import uvicorn

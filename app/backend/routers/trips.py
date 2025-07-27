@@ -258,66 +258,6 @@ def delete_trip(
             detail="Error deleting trip"
         )
 
-@router.post("/{trip_id}/generate-itinerary", response_model=models.Trip)
-async def generate_trip_itinerary(
-    trip_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.DBUser = Depends(get_current_active_user)
-):
-    try:
-        # Get the trip
-        trip = db.query(models.DBTrip).filter(
-            models.DBTrip.id == trip_id,
-            models.DBTrip.owner_id == current_user.id
-        ).first()
-        
-        if not trip:
-            raise HTTPException(status_code=404, detail="Trip not found")
-        
-        # Set generating status
-        trip.itinerary = {"status": "generating", "activities": []}
-        db.commit()
-        
-        # Get user preferences
-        preferences = db.query(models.DBPreference).filter(
-            models.DBPreference.user_id == current_user.id
-        ).all()
-        
-        try:
-            # Call itinerary service
-            status_code, itinerary = await itinerary_service.generate_itinerary(
-                str(trip_id),  
-                trip.destination,
-                str(trip.start_date),
-                str(trip.end_date),
-                [{"category": p.category, "value": p.value, "weight": p.weight} for p in preferences],
-                trip.budget
-            )
-            
-            if status_code == 200 and itinerary and isinstance(itinerary, dict):
-                trip.itinerary = itinerary
-            elif status_code == 202:
-                trip.itinerary = {"status": "generating", "activities": [], "message": "Generation in progress"}
-            else:
-                raise ValueError(f"Service returned status {status_code}: {itinerary}")
-                
-        except Exception as e:
-            logger.error(f"Itinerary generation failed: {str(e)}")
-            trip.itinerary = {
-                "status": "error",
-                "activities": [],
-                "error": f"Failed to generate: {str(e)}"
-            }
-        
-        db.commit()
-        db.refresh(trip)
-        return trip
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error generating itinerary: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error generating itinerary")
 
 async def generate_and_save_itinerary(
     trip_id: str, 

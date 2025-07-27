@@ -36,7 +36,6 @@ const TripForm = ({ onSubmit, initialData = {}, onCancel }) => {
       setLoadingLocations(true);
       setLocationsError(null);
       try {
-        // Adjust the URL if your API base path is different
         const response = await fetch("/api/locations");
         if (!response.ok) throw new Error("Failed to fetch locations");
         const data = await response.json();
