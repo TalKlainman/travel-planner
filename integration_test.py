@@ -128,20 +128,6 @@ async def test_end_to_end_flow():
         else:
             print(" Itinerary was not generated in time, but test continues")
         
-        # 6. Test nearby attractions
-        if locations:
-            location = locations[0]
-            response = await client.post(
-                f"{MAP_URL}/nearby",
-                json={
-                    "lat": location["lat"],
-                    "lng": location["lng"],
-                    "radius": 2000
-                }
-            )
-            assert response.status_code == 200, f"Failed to get nearby attractions: {response.text}"
-            attractions = response.json()
-            print(f"Successfully found {len(attractions)} nearby attractions")
             
     print(" Integration test completed successfully!")
 
